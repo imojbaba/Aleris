@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,7 +51,7 @@
     }
     .talk-section {
       background: #e3f2fd;
-      padding: 2rem 1rem;
+      padding: 2rem 1rem 5rem 1rem;
       text-align: center;
     }
     .talk-section h2 {
@@ -76,16 +77,19 @@
       background: #f9dc5c;
       border-color: #f9dc5c;
     }
-    .cta {
-      display: inline-block;
-      margin-top: 1rem;
+    .cta-sticky {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       padding: 1rem 2rem;
       background: #0056b3;
       color: white;
       font-weight: bold;
       text-decoration: none;
-      border-radius: 5px;
-      cursor: pointer;
+      border-radius: 8px;
+      z-index: 1000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
   </style>
 </head>
@@ -116,7 +120,8 @@
       <a class="topic" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Overthinking & Anxiety</a>
       <a class="topic" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Emotional Support in Hindi/Marathi</a>
     </div>
-    <a class="cta" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Start Chatting with Tara</a>
   </section>
+
+  <a class="cta-sticky" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Chat with Tara Now</a>
 </body>
 </html>
