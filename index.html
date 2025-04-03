@@ -1,127 +1,150 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meet Tara</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Aleris</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      font-family: 'Helvetica Neue', sans-serif;
-      background-color: #ffffff;
-      color: #111;
-      line-height: 1.6;
+      font-family: 'Inter', sans-serif;
+      background-color: #fffaf3;
+      color: #002244;
     }
     header {
-      background: #f9dc5c;
-      padding: 3rem 1.5rem;
       text-align: center;
+      padding: 4rem 1rem 2rem;
     }
     header h1 {
+      font-family: 'Playfair Display', serif;
       font-size: 3rem;
-      margin: 0;
-      color: #111;
+      font-weight: 700;
+      color: #001b44;
+      margin-bottom: 1rem;
     }
-    .intro {
-      text-align: center;
-      padding: 2rem 1rem;
-    }
-    .intro p {
+    header p {
+      font-size: 1.15rem;
       max-width: 600px;
-      margin: 1rem auto;
-      font-size: 1.2rem;
+      margin: 0 auto;
+      line-height: 1.6;
     }
-    .ratings {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 2rem;
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-top: 3rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      padding: 0 2rem 4rem;
+      max-width: 1000px;
+      margin: auto;
+    }
+    .card {
+      background-color: #ffffff;
+      border-radius: 1.5rem;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.05);
     }
     .avatar {
-      text-align: center;
-      margin-top: 1rem;
+      width: 120px;
+      height: 120px;
+      border-radius: 20px;
+      object-fit: cover;
+      margin-bottom: 1.2rem;
     }
-    .avatar img {
-      width: 140px;
-      height: auto;
-      border-radius: 50%;
+    .card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
     }
-    .talk-section {
-      background: #e3f2fd;
-      padding: 2rem 1rem 5rem 1rem;
-      text-align: center;
+    .card h4 {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #444;
+      margin-bottom: 0.8rem;
     }
-    .talk-section h2 {
-      color: #0056b3;
+    .card p {
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 1.2rem;
+      line-height: 1.45;
     }
-    .topics {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      margin: 2rem 0;
-    }
-    .topic {
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      text-decoration: none;
-      color: #111;
-      transition: all 0.3s ease;
-    }
-    .topic:hover {
-      background: #f9dc5c;
-      border-color: #f9dc5c;
-    }
-    .cta-sticky {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 1rem 2rem;
-      background: #0056b3;
+    .cta-button {
+      background-color: #ff9000;
       color: white;
-      font-weight: bold;
-      text-decoration: none;
-      border-radius: 8px;
-      z-index: 1000;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      font-weight: 600;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .about-section {
+      text-align: center;
+      padding: 3rem 2rem 5rem;
+    }
+    .about-section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .about-section p {
+      font-size: 0.95rem;
+      max-width: 600px;
+      margin: 0 auto;
+      color: #333;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Meet Tara</h1>
+    <h1>Welcome to Aleris</h1>
+    <p>We create AI companions who provide support with empathy and understanding.</p>
   </header>
 
-  <section class="intro">
-    <div class="avatar">
-      <img src="https://res.cloudinary.com/dty7kx8no/image/upload/v1743438580/ChatGPT_Image_Mar_31_2025_09_59_16_PM_odjttx.png" alt="Tara Avatar" />
+  <div class="section-title">MEET OUR EXPERTS</div>
+  <div class="card-container">
+    <div class="card">
+      <img class="avatar" src="https://res.cloudinary.com/dty7kx8no/image/upload/v1743671725/tara_mkixil.png" alt="Tara">
+      <h3>Tara</h3>
+      <h4>Mental Health</h4>
+      <p>I help you process stress, self-doubt, and life’s challenges with clarity and care.</p>
+      <a href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">
+        <button class="cta-button">Talk to me</button>
+      </a>
     </div>
-    <p>Tara is your emotionally intelligent big-sis energy — here to help you through love, stress, and overthinking. She listens like a friend, reflects like a mirror, and helps you feel a little lighter every time you chat.</p>
-    <div class="ratings">
-      <div>⭐⭐⭐⭐⭐ <br/> 4.9 Rating</div>
-      <div>💬 2,500+ Conversations</div>
-      <div>❤️ Trusted by Indian Women</div>
+    <div class="card">
+      <img class="avatar" src="https://res.cloudinary.com/dty7kx8no/image/upload/v1743669960/Kabir_avatar_mgvqt6.png" alt="Kabir">
+      <h3>Kabir</h3>
+      <h4>Motivation</h4>
+      <p>I’m here to help you unpack goals, navigate burnout, and push through with calm clarity.</p>
+      <a href="https://chatgpt.com/g/g-67eceec2ac108191a3f4f36181f5dda6-coach-kabir" target="_blank">
+        <button class="cta-button">Talk to me</button>
+      </a>
     </div>
-  </section>
+    <div class="card">
+      <img class="avatar" src="https://res.cloudinary.com/dty7kx8no/image/upload/v1743670208/naina_gzy10b.png" alt="Naina">
+      <h3>Naina</h3>
+      <h4>Relationships</h4>
+      <p>I help you untangle love, boundaries, and the messy matters of the heart with compassion.</p>
+      <a href="https://chatgpt.com/g/g-67ed18949efc8191afc663021bc80cbf-naina-for-the-love-stuck" target="_blank">
+        <button class="cta-button">Talk to me</button>
+      </a>
+    </div>
+  </div>
 
-  <section class="talk-section">
-    <h2>Talk to Tara About...</h2>
-    <div class="topics">
-      <a class="topic" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Relationship Confusion</a>
-      <a class="topic" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Self-Worth & Confidence</a>
-      <a class="topic" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Body Image & Food Guilt</a>
-      <a class="topic" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Stress & Burnout</a>
-      <a class="topic" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Overthinking & Anxiety</a>
-      <a class="topic" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Emotional Support in Hindi/Marathi</a>
-    </div>
-  </section>
-
-  <a class="cta-sticky" href="https://chatgpt.com/g/g-67ea6a3ec74481919165c42d40e0c39c-tara-companion-big-sis-for-indian-women" target="_blank">Chat with Tara</a>
+  <div class="about-section">
+    <h2>ABOUT US</h2>
+    <p>Aleris is reimagining mental wellness through emotionally intelligent AI companions built for the Indian mind and heart. This is empathy, on demand.</p>
+  </div>
 </body>
 </html>
