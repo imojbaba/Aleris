@@ -45,15 +45,55 @@ a reviewer a precise map of overlap, not to convict anyone.
     `data/library.json` to this repo and any static host will serve it as the
     shared starting set.
 
+## Web check & source discovery
+
+With the small serverless backend in [`api/`](api/) deployed (see Vercel below),
+two more features light up automatically:
+
+- **Also check the web** (Check tab) — extracts the document's 5 most
+  distinctive quoted phrases, searches them, fetches the top ~8 pages
+  server-side, and screens them with the same engine. Web sources appear in the
+  report with links and full side-by-side evidence.
+- **Find sources on the web** (Library tab) — NotebookLM-style discovery: give
+  it a topic or the document itself, review the results, and pull chosen pages
+  into the library as reference sources.
+
+The backend is three tiny functions: `api/search` (query the search provider),
+`api/fetch` (server-side page fetch + boilerplate-stripping text extraction,
+SSRF-guarded), `api/health` (feature detection). Analysis still happens in the
+browser; the server never sees your documents — only the search phrases and
+the URLs it fetches.
+
+### Deploying to Vercel
+
+1. Import this repo at vercel.com → **Add New → Project**. Framework preset
+   **Other**, no build command, output directory `./`. The `api/` folder is
+   picked up automatically.
+2. Add environment variables (Project → Settings → Environment Variables):
+
+   | Variable | Value |
+   |---|---|
+   | `SEARCH_PROVIDER` | `serper` or `google` |
+   | `SERPER_API_KEY` | if using [serper.dev](https://serper.dev) (~$1 / 1k searches) |
+   | `GOOGLE_CSE_KEY` + `GOOGLE_CSE_ID` | if using [Google Programmable Search](https://programmablesearch.google.com) (free ≈100 queries/day; create an engine that searches the entire web) |
+   | `APP_PASSWORD` | optional — a shared team key; the UI asks for it once and the API refuses requests without it, so strangers can't burn your search quota |
+
+3. Redeploy. Without any of these, the site still works — the web features just
+   stay hidden. A web check uses 5 search queries; discovery uses up to 4.
+
+Local test drive: `SEARCH_PROVIDER=mock node tools/dev-server.mjs` serves the
+app plus the API with canned fixture results on `http://127.0.0.1:8124`.
+
 ## Ways to run it
 
-1. **Shared artifact (recommended for the team)** — the app is published as a
-   claude.ai Artifact; share that link with the team. Team-library saving works
-   there.
-2. **Static hosting / GitHub Pages** — serve this repo as-is (`index.html` at
-   the root). No build step, no backend.
-3. **Single file** — `dist/aleris-originality.html` is the whole app in one
-   file; open it from disk or email it.
+1. **Vercel (recommended)** — everything: local library, team sharing via JSON
+   or a committed `data/library.json`, web check, source discovery.
+2. **Shared artifact** — the claude.ai Artifact link; adds the shared
+   **team library** saved into the artifact itself. (No web features there —
+   the artifact sandbox has no backend.)
+3. **Static hosting / GitHub Pages** — serve the repo as-is; local features
+   only.
+4. **Single file** — `dist/aleris-originality.html`; open from disk or email it.
 
 ## Development
 
@@ -61,14 +101,16 @@ a reviewer a precise map of overlap, not to convict anyone.
 ├── index.html            app shell
 ├── styles.css            design system (light + dark, brand tokens)
 ├── js/engine.js          detection engine — pure, DOM-free, Node-testable
-├── js/app.js             UI, library storage, team sync, imports/exports
-├── test/engine.test.js   accuracy suite (node --test)
-└── tools/build-single-file.mjs   builds dist/ from the sources
+├── js/app.js             UI, library storage, team sync, web features
+├── api/                  Vercel serverless: search, fetch+extract, health
+├── test/                 accuracy + API suites (node --test), web fixtures
+└── tools/                single-file build; local dev server with /api
 ```
 
 ```bash
-node --test test/engine.test.js   # 26 accuracy + robustness tests
-node tools/build-single-file.mjs  # regenerate dist/ after changing sources
+node --test test/engine.test.js test/api.test.js   # 33 tests
+node tools/build-single-file.mjs                   # regenerate dist/
+SEARCH_PROVIDER=mock node tools/dev-server.mjs     # full app on :8124
 ```
 
 The engine has no dependencies. The app's only external code is JSZip (from
@@ -77,8 +119,10 @@ degrades gracefully without network access.
 
 ## Honest limitations
 
-- It measures **textual overlap against the reference set you give it** — it
-  does not search the open web, and it is not an AI-generated-text detector.
+- Local checks measure overlap **against your reference set**; the web check
+  covers **what the search engine surfaces for the document's phrasing** — deep
+  paraphrase with fully new wording can evade phrase search, and paywalled or
+  PDF sources can't be fetched. It is not an AI-generated-text detector.
 - Scoring is tuned for English (stemmer, stopwords); other languages still get
   verbatim and fingerprint layers.
 - A high score is a starting point for human review, never a verdict.

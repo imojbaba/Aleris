@@ -124,6 +124,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
@@ -237,7 +238,7 @@ input[type="text"], textarea, select {
 textarea { min-height: 180px; resize: vertical; font-family: "Source Serif 4", Georgia, serif; font-size: 0.95rem; }
 input[type="range"] { accent-color: var(--accent); }
 input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
-.check { display: inline-flex; gap: 0.45rem; align-items: center; font-size: 0.84rem; color: var(--ink-2); font-weight: 500; }
+.check { display: inline-flex; gap: 0.45rem; align-items: center; font-size: 0.84rem; color: var(--ink-2); font-weight: 500; white-space: nowrap; }
 .hint { font-size: 0.78rem; color: var(--muted); }
 
 .btn {
@@ -435,6 +436,28 @@ table.heat td.self { background: var(--card-2); cursor: default; }
 }
 .badge-team { background: var(--good-wash); color: var(--good); }
 .badge-local { background: var(--card-2); color: var(--muted); border: 1px solid var(--hairline); }
+.badge-web { background: var(--heat-1); color: var(--heat-6); }
+
+a.ext {
+  color: var(--ink-2);
+  font-size: 0.76rem;
+  font-weight: 500;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+a.ext:hover { color: var(--focus); }
+
+.disc-row {
+  display: flex; gap: 0.7rem; align-items: flex-start;
+  padding: 0.55rem 0.6rem; border: 1px solid var(--hairline);
+  border-radius: 8px; cursor: pointer; background: var(--card);
+}
+.disc-row:hover { border-color: var(--line); }
+.disc-row.have { opacity: 0.65; cursor: default; }
+.disc-row input { margin-top: 0.25rem; }
+.disc-row .t { font-weight: 600; font-size: 0.9rem; }
+.disc-state { white-space: nowrap; margin-top: 0.2rem; }
 
 /* ---------- misc ---------- */
 .note {

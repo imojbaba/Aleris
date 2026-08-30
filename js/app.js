@@ -46,10 +46,12 @@
   /* ---------------- state + persistence ---------------- */
   var LIB_KEY = "alerisOriginality.lib.v1";
   var OPT_KEY = "alerisOriginality.opts.v1";
+  var KEY_KEY = "alerisOriginality.appkey";
   var state = {
-    library: [],            // {id,title,author,text,words,updatedAt,origin:'local'|'team'}
+    library: [],            // {id,title,author,text,words,updatedAt,origin:'local'|'team'|'web',url?}
     mode: "library",        // 'library' | 'adhoc'
     lastReport: null,
+    web: { available: false, provider: null, authNeeded: false },
     team: { ns: null, downloads: null, fetched: false, teamCount: 0,
             teamSavedAt: null, readOnly: false, unavailable: false }
   };
@@ -66,6 +68,7 @@
         if (o.minRun) $("#opt-minrun").value = String(o.minRun);
         $("#opt-quotes").checked = o.ignoreQuotes !== false;
         $("#opt-refs").checked = o.ignoreReferences !== false;
+        $("#opt-web").checked = o.webCheck === true;
       }
     } catch (e) { }
   }
@@ -81,8 +84,82 @@
     return {
       minRun: parseInt($("#opt-minrun").value, 10) || 5,
       ignoreQuotes: $("#opt-quotes").checked,
-      ignoreReferences: $("#opt-refs").checked
+      ignoreReferences: $("#opt-refs").checked,
+      webCheck: $("#opt-web").checked
     };
+  }
+
+  /* ---------------- web backend (Vercel /api) ---------------- */
+  function apiKey() {
+    try { return localStorage.getItem(KEY_KEY) || ""; } catch (e) { return ""; }
+  }
+  function apiCall(path, body) {
+    var headers = { "content-type": "application/json" };
+    var key = apiKey();
+    if (key) headers["x-app-key"] = key;
+    return fetch(path, { method: "POST", headers: headers, body: JSON.stringify(body) })
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (json) {
+          if (!res.ok) throw new Error(json.error || ("HTTP " + res.status));
+          return json;
+        });
+      });
+  }
+  function bootBackend() {
+    if (window.claude && typeof window.claude.use === "function") return; // artifact view: no backend
+    try {
+      fetch("api/health", { cache: "no-store" }).then(function (res) {
+        if (!res.ok) return null;
+        return res.json();
+      }).then(function (json) {
+        if (!json || !json.ok || !json.search) return;
+        state.web.available = true;
+        state.web.provider = json.provider;
+        state.web.authNeeded = Boolean(json.auth);
+        $("#web-row").hidden = false;
+        $("#discover-card").hidden = false;
+        if (json.auth) {
+          $("#web-key-wrap").hidden = false;
+          $("#web-key").value = apiKey();
+        }
+      }).catch(function () { });
+    } catch (e) { }
+  }
+
+  function webQueriesFor(text) {
+    var qs = E.distinctiveQueries(text, 5);
+    if (qs.length < 2) qs = qs.concat(E.topicQueries(text, 2));
+    return qs.slice(0, 5);
+  }
+
+  // Search for the document's phrasing, fetch the top pages, and return them
+  // as extra sources for the same analysis pipeline.
+  function gatherWebSources(text, status, existing) {
+    status("Searching the web…");
+    return apiCall("api/search", { queries: webQueriesFor(text) }).then(function (r) {
+      var have = new Set(existing.map(function (s) { return s.url; }).filter(Boolean));
+      var picks = (r.results || []).filter(function (x) { return !have.has(x.url); }).slice(0, 8);
+      if (!picks.length) return { sources: [], failures: 0, searched: r.queriesUsed || 0 };
+      var fetched = [], failures = 0, done = 0;
+      function next(queue) {
+        var item = queue.shift();
+        if (!item) return Promise.resolve();
+        return apiCall("api/fetch", { url: item.url }).then(function (page) {
+          fetched.push({ id: "web:" + item.url, title: page.title || item.title || item.url,
+                         text: page.text, url: page.finalUrl || item.url });
+        }, function () { failures++; }).then(function () {
+          done++;
+          status("Fetching web pages… " + done + "/" + picks.length);
+          return next(queue);
+        });
+      }
+      var queue = picks.slice();
+      var workers = [];
+      for (var w = 0; w < 3; w++) workers.push(next(queue));
+      return Promise.all(workers).then(function () {
+        return { sources: fetched, failures: failures, searched: r.queriesUsed || 0 };
+      });
+    });
   }
 
   /* ---------------- team library (artifact capability) ---------------- */
@@ -295,7 +372,7 @@
   }
 
   /* ---------------- library ---------------- */
-  function addDoc(title, author, text) {
+  function addDoc(title, author, text, extra) {
     var doc = {
       id: uid(),
       title: (title || "Untitled").trim() || "Untitled",
@@ -303,11 +380,20 @@
       text: text,
       words: E.tokenize(text).tokens.length,
       updatedAt: Date.now(),
-      origin: "local"
+      origin: (extra && extra.origin) || "local"
     };
+    if (extra && extra.url) doc.url = extra.url;
     state.library.push(doc);
     saveLocal(); renderLibrary(); updateScopeNote();
     return doc;
+  }
+  function badgeFor(d) {
+    if (d.origin === "team") return "<span class='badge badge-team'>Team</span>";
+    if (d.origin === "web") return "<span class='badge badge-web'>Web</span>";
+    return "<span class='badge badge-local'>Local only</span>";
+  }
+  function hostOf(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return ""; }
   }
 
   function renderLibrary() {
@@ -324,8 +410,9 @@
       .forEach(function (d) {
         var card = el("article", { class: "card lib-card" });
         card.innerHTML =
-          "<div class='row spread'><span class='badge " + (d.origin === "team" ? "badge-team'>Team" : "badge-local'>Local only") + "</span></div>" +
-          "<div class='t'>" + esc(d.title) + "</div>" +
+          "<div class='row spread'>" + badgeFor(d) + "</div>" +
+          "<div class='t'>" + esc(d.title) +
+          (d.url ? " <a class='ext' href='" + esc(d.url) + "' target='_blank' rel='noopener noreferrer' title='Open source page'>" + esc(hostOf(d.url)) + " ↗</a>" : "") + "</div>" +
           (d.author ? "<div class='hint'>" + esc(d.author) + "</div>" : "") +
           "<div class='meta'>" + fmtInt(d.words) + " words · " + new Date(d.updatedAt).toLocaleDateString() + "</div>" +
           "<details><summary class='hint' style='cursor:pointer'>Preview</summary>" +
@@ -425,14 +512,18 @@
       : state.library.length + " documents · " + (state.library.length * (state.library.length - 1) / 2) + " pairs";
   }
 
-  function gatherSources() {
+  function gatherSources(webEnabled) {
     if (state.mode === "adhoc") {
       var t = $("#adhoc-text").value;
       if (!t.trim()) return { error: "Paste the reference text to compare against (or switch to library mode)." };
       return { sources: [{ id: "adhoc", title: "Pasted reference text", text: t }] };
     }
-    if (!state.library.length) return { error: "The library is empty — add reference documents first, or compare against pasted text." };
-    return { sources: state.library.map(function (d) { return { id: d.id, title: d.title, text: d.text }; }) };
+    if (!state.library.length && !webEnabled) {
+      return { error: "The library is empty — add reference documents, turn on the web check, or compare against pasted text." };
+    }
+    return { sources: state.library.map(function (d) {
+      return { id: d.id, title: d.title, text: d.text, url: d.url };
+    }) };
   }
 
   // Incremental multi-source analysis: one engine pass per source with UI
@@ -507,26 +598,41 @@
   function runCheck() {
     var text = $("#check-text").value;
     if (!text.trim()) { toast("Paste or import the document to check first."); return; }
-    var g = gatherSources();
+    var webOn = state.web.available && $("#opt-web").checked;
+    var g = gatherSources(webOn);
     if (g.error) { toast(g.error); return; }
     var opts = currentOpts();
     saveLocal();
     var btn = $("#run-check"), status = $("#check-status"), prog = $("#check-progress");
     btn.disabled = true; prog.hidden = false;
     var t0 = Date.now();
-    analyzeIncremental(text, g.sources, opts, function (i, n, title) {
-      status.textContent = "Comparing against “" + title + "” (" + (i + 1) + "/" + n + ")…";
-      prog.firstElementChild.style.width = ((i / n) * 100) + "%";
-    }).then(function (report) {
-      report.title = $("#check-title").value.trim() || "Untitled document";
-      report.sources = g.sources;
-      report.ranAt = new Date();
-      state.lastReport = report;
-      prog.firstElementChild.style.width = "100%";
-      status.textContent = "Done in " + ((Date.now() - t0) / 1000).toFixed(1) + "s.";
-      renderReport(report);
+    var setStatus = function (msg) { status.textContent = msg; };
+    var webInfo = { sources: [], failures: 0 };
+
+    var pre = webOn
+      ? gatherWebSources(text, setStatus, g.sources).then(function (w) { webInfo = w; },
+          function (err) { toast("Web search failed: " + err.message + " — running the local check only."); })
+      : Promise.resolve();
+
+    pre.then(function () {
+      var sources = g.sources.concat(webInfo.sources);
+      if (!sources.length) throw new Error("no sources to compare against (the web search found no reachable pages)");
+      return analyzeIncremental(text, sources, opts, function (i, n, title) {
+        setStatus("Comparing against “" + title + "” (" + (i + 1) + "/" + n + ")…");
+        prog.firstElementChild.style.width = ((i / n) * 100) + "%";
+      }).then(function (report) {
+        report.title = $("#check-title").value.trim() || "Untitled document";
+        report.sources = sources;
+        report.webCount = webInfo.sources.length;
+        report.ranAt = new Date();
+        state.lastReport = report;
+        prog.firstElementChild.style.width = "100%";
+        setStatus("Done in " + ((Date.now() - t0) / 1000).toFixed(1) + "s." +
+          (webInfo.failures ? " (" + webInfo.failures + " web page" + (webInfo.failures === 1 ? "" : "s") + " couldn't be fetched)" : ""));
+        renderReport(report);
+      });
     }).catch(function (err) {
-      status.textContent = "";
+      setStatus("");
       toast("Analysis failed: " + (err && err.message || err));
     }).then(function () {
       btn.disabled = false;
@@ -632,6 +738,7 @@
       tile(fmtInt(rep.counts.paraphrase), "Paraphrase-like") +
       (excluded ? tile(fmtInt(excluded), "Excluded (quotes/refs)") : "") +
       tile(String(rep.perSource.filter(function (s) { return s.similarity >= 0.005 || s.spans.length; }).length) + "/" + rep.perSource.length, "Sources with matches") +
+      (rep.webCount ? tile(String(rep.webCount), "Web pages checked") : "") +
       tile(pct(rep.perSource.reduce(function (m, s) { return Math.max(m, s.containment); }, 0)) + "%", "Top fingerprint match") +
       "</div></div></div>" +
       "<div class='hint' style='margin-top:1rem'>Sentence map — each cell is a sentence, colored by its strongest match. Click to jump.</div>" +
@@ -682,8 +789,11 @@
     rep.perSource.forEach(function (s) {
       var d = el("details", { class: "src-detail" });
       var simPct = pct(s.similarity);
+      var srcUrl = null;
+      rep.sources.forEach(function (x) { if (x.id === s.id && x.url) srcUrl = x.url; });
       d.innerHTML = "<summary><div class='src-row'>" +
         "<div class='t'>" + esc(s.title) +
+        (srcUrl ? " <a class='ext' href='" + esc(srcUrl) + "' target='_blank' rel='noopener noreferrer'>" + esc(hostOf(srcUrl)) + " ↗</a>" : "") +
         "<div class='sub'>" + s.spans.length + " verbatim passage" + (s.spans.length === 1 ? "" : "s") +
         " · " + s.sentencePairs.length + " matched sentence" + (s.sentencePairs.length === 1 ? "" : "s") +
         " · fingerprint " + pct(s.containment) + "%</div></div>" +
@@ -937,6 +1047,74 @@
   }
   function short(t, n) { return t.length > n ? t.slice(0, n - 1) + "…" : t; }
 
+  /* ---------------- source discovery ---------------- */
+  function runDiscovery() {
+    var text = $("#discover-text").value.trim();
+    if (!text) { toast("Describe the topic first (or click “Use my check document”)."); return; }
+    var queries = text.split(/\s+/).length <= 12
+      ? [text]                                   // short input: search it as-is
+      : E.topicQueries(text, 2).concat(E.distinctiveQueries(text, 2));
+    if (!queries.length) queries = [text.slice(0, 200)];
+    var status = $("#discover-status"), btn = $("#discover-run");
+    btn.disabled = true;
+    status.textContent = "Searching…";
+    apiCall("api/search", { queries: queries.slice(0, 4) }).then(function (r) {
+      renderDiscovery(r.results || []);
+      status.textContent = (r.results || []).length + " results.";
+    }).catch(function (err) {
+      status.textContent = "";
+      toast("Search failed: " + err.message);
+    }).then(function () { btn.disabled = false; });
+  }
+
+  function renderDiscovery(results) {
+    var wrap = $("#discover-results");
+    if (!results.length) { wrap.innerHTML = "<p class='hint'>No results — try broader wording.</p>"; return; }
+    var inLib = new Set(state.library.map(function (d) { return d.url; }).filter(Boolean));
+    wrap.innerHTML = "<div class='stack' style='gap:.4rem;margin-top:.6rem'>" +
+      results.map(function (r, i) {
+        var have = inLib.has(r.url);
+        return "<label class='disc-row" + (have ? " have" : "") + "'>" +
+          "<input type='checkbox' data-i='" + i + "'" + (have ? " disabled" : "") + ">" +
+          "<span class='grow'><span class='t'>" + esc(r.title) + "</span> " +
+          "<a class='ext' href='" + esc(r.url) + "' target='_blank' rel='noopener noreferrer'>" + esc(hostOf(r.url)) + " ↗</a>" +
+          (have ? " <span class='badge badge-web'>In library</span>" : "") +
+          "<span class='hint' style='display:block'>" + esc(r.snippet || "") + "</span></span>" +
+          "<span class='hint disc-state' data-state='" + i + "'></span>" +
+          "</label>";
+      }).join("") + "</div>" +
+      "<div class='row' style='margin-top:.8rem'><button class='btn btn-primary btn-sm' id='discover-add'>Add selected to library</button></div>";
+    $("#discover-add").addEventListener("click", function () {
+      var boxes = Array.prototype.slice.call(wrap.querySelectorAll("input[type=checkbox]:checked"));
+      if (!boxes.length) { toast("Tick the sources you want first."); return; }
+      var addBtn = $("#discover-add");
+      addBtn.disabled = true;
+      var added = 0, failed = 0;
+      var chain = Promise.resolve();
+      boxes.forEach(function (box) {
+        var r = results[+box.getAttribute("data-i")];
+        var stateEl = wrap.querySelector("[data-state='" + box.getAttribute("data-i") + "']");
+        chain = chain.then(function () {
+          stateEl.textContent = "fetching…";
+          return apiCall("api/fetch", { url: r.url }).then(function (page) {
+            addDoc(page.title || r.title, hostOf(r.url), page.text, { origin: "web", url: page.finalUrl || r.url });
+            stateEl.textContent = "added ✓";
+            box.disabled = true; box.checked = false;
+            added++;
+          }, function (err) {
+            stateEl.textContent = "failed: " + err.message;
+            failed++;
+          });
+        });
+      });
+      chain.then(function () {
+        addBtn.disabled = false;
+        toast("Added " + added + " source" + (added === 1 ? "" : "s") + " to the library" +
+          (failed ? " (" + failed + " failed)" : "") + ".");
+      });
+    });
+  }
+
   /* ---------------- sample ---------------- */
   var SAMPLE_SOURCE = "Detector design notes (sample)\n\nA trustworthy similarity checker must explain its verdict, showing exactly which passages match and where they came from. Scores without evidence are worse than no scores at all, because they invite both false confidence and false accusation. Modern detectors therefore combine several signals: word n-gram fingerprints survive reordering, sentence-level alignment captures light edits, and normalized token streams defeat character tricks. Finally, the report should separate quotation from appropriation, since citing a source honestly is the opposite of hiding one.";
   var SAMPLE_SUSPECT = "Draft: how our checker should behave (sample)\n\nOur team wants tooling we can defend in front of a client. A trustworthy similarity checker must explain its verdict, showing exactly which passages match and where they came from. We also believe detectors should mix multiple signals, since fingerprints of word n-grams keep working after reordering while alignment at the sentence level picks up light edits. As one of our references puts it, “Scores without evidence are worse than no scores at all, because they invite both false confidence and false accusation.” Beyond that, everything here is our own: we care about warm onboarding, a steady cadence of review rounds, and shipping something the whole team actually opens on Monday mornings.";
@@ -966,8 +1144,25 @@
     renderLibrary();
     updateScopeNote();
     bootTeam();
+    bootBackend();
     wireJumps($("#report"));
     wireJumps($("#cross-result"));
+
+    // external links inside <summary> rows must not toggle the accordion
+    document.addEventListener("click", function (e) {
+      if (e.target.closest("a.ext")) e.stopPropagation();
+    }, true);
+
+    $("#discover-run").addEventListener("click", runDiscovery);
+    $("#discover-use-doc").addEventListener("click", function () {
+      var t = $("#check-text").value.trim();
+      if (!t) { toast("Nothing in the Check tab yet — paste the document there first."); return; }
+      $("#discover-text").value = t.slice(0, 4000);
+      toast("Using the check document — hit “Search the web”.");
+    });
+    $("#web-key").addEventListener("change", function () {
+      try { localStorage.setItem(KEY_KEY, $("#web-key").value.trim()); } catch (e) { }
+    });
 
     document.querySelectorAll(".tab").forEach(function (t) {
       t.addEventListener("click", function () { switchView(t.getAttribute("data-view")); });
@@ -1004,7 +1199,7 @@
       if (e.target.files.length) importLibraryFile(e.target.files[0]);
     });
 
-    ["opt-minrun", "opt-quotes", "opt-refs"].forEach(function (id) {
+    ["opt-minrun", "opt-quotes", "opt-refs", "opt-web"].forEach(function (id) {
       $("#" + id).addEventListener("change", saveLocal);
     });
   }

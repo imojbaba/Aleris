@@ -69,6 +69,14 @@
             </label>
           </div>
 
+          <div class="row" id="web-row" hidden>
+            <label class="check"><input type="checkbox" id="opt-web"> Also check the web</label>
+            <span class="hint">Searches the document's most distinctive phrasing (5 queries) and screens the top pages with the same engine.</span>
+            <label class="fld" id="web-key-wrap" hidden style="max-width:200px;font-size:.72rem">Team access key
+              <input type="password" id="web-key" autocomplete="off" placeholder="access key">
+            </label>
+          </div>
+
           <div class="row">
             <button class="btn btn-primary" id="run-check">Run check</button>
             <button class="btn" id="load-sample" type="button">Load sample</button>
@@ -107,6 +115,21 @@
 
       <div class="stack">
         <div class="card" id="team-card" hidden></div>
+
+        <div class="card stack" id="discover-card" hidden>
+          <h3 style="font-size:1.02rem">Find sources on the web</h3>
+          <p class="hint" style="margin:0">Describe the topic — or use the document you're checking — and pull
+            relevant pages straight into the library as reference sources.</p>
+          <label class="fld">Topic or excerpt
+            <textarea id="discover-text" style="min-height:90px" spellcheck="false" placeholder="e.g. renewable energy storage cost trends 2024"></textarea>
+          </label>
+          <div class="row">
+            <button class="btn" id="discover-run">Search the web</button>
+            <button class="btn btn-sm" id="discover-use-doc" type="button">Use my check document</button>
+            <span class="hint grow" id="discover-status" role="status" aria-live="polite"></span>
+          </div>
+          <div id="discover-results"></div>
+        </div>
 
         <div class="card stack">
           <h3 style="font-size:1.02rem">Add documents</h3>

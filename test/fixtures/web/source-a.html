@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Detector design notes — published article</title></head>
+<body>
+<nav>Home · Blog · About — navigation boilerplate that extraction should drop</nav>
+<article>
+<h1>Detector design notes</h1>
+<p>A trustworthy similarity checker must explain its verdict, showing exactly
+which passages match and where they came from. Scores without evidence are
+worse than no scores at all, because they invite both false confidence and
+false accusation.</p>
+<p>Modern detectors therefore combine several signals: word n-gram fingerprints
+survive reordering, sentence-level alignment captures light edits, and
+normalized token streams defeat character tricks. Finally, the report should
+separate quotation from appropriation, since citing a source honestly is the
+opposite of hiding one.</p>
+<p>This fixture page exists so the web-check pipeline can be tested end to end
+without a real search provider: the mock provider returns its URL, the fetch
+endpoint extracts this article text, and the engine should attribute matching
+passages of the sample document to it.</p>
+</article>
+<footer>Copyright boilerplate that extraction should drop</footer>
+</body>
+</html>

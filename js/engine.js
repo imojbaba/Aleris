@@ -681,6 +681,81 @@
     return { docs: docs.map(function (d) { return { id: d.id, title: d.title }; }), cells: cells };
   }
 
+  /* ------------------------------------------------------------------ *
+   * Web query builders
+   * ------------------------------------------------------------------ */
+
+  // Quoted 8-word shingles spread across the document — the classic way to
+  // find verbatim sources with a search engine. Skips stopword-heavy and
+  // number-heavy shingles, prefers sentences with distinctive vocabulary.
+  function distinctiveQueries(text, count) {
+    count = count || 5;
+    var doc = tokenize(text);
+    var K = 8;
+    if (doc.tokens.length < K) return [];
+    var candidates = [];
+    for (var s = 0; s < doc.sentences.length; s++) {
+      var sent = doc.sentences[s];
+      if (sent.tokenCount < K) continue;
+      var i = sent.tokenStart + Math.floor((sent.tokenCount - K) / 2);
+      var toks = doc.tokens.slice(i, i + K);
+      var stop = 0, num = 0, chars = 0;
+      for (var t = 0; t < toks.length; t++) {
+        if (STOPWORDS.has(toks[t].norm)) stop++;
+        if (/^\d+$/.test(toks[t].norm)) num++;
+        chars += toks[t].norm.length;
+      }
+      if (stop > K * 0.6 || num > 2) continue;
+      candidates.push({
+        pos: toks[0].start,
+        score: chars - stop * 4,
+        phrase: toks.map(function (x) { return x.raw; }).join(" ")
+          .replace(/["“”]/g, "")
+      });
+    }
+    if (!candidates.length) return [];
+    // pick the best candidate from each of `count` even slices of the doc
+    var out = [], seen = new Set();
+    for (var c = 0; c < count; c++) {
+      var lo = (text.length * c) / count, hi = (text.length * (c + 1)) / count;
+      var best = null;
+      for (var k = 0; k < candidates.length; k++) {
+        var cand = candidates[k];
+        if (cand.pos < lo || cand.pos >= hi || seen.has(cand.phrase)) continue;
+        if (!best || cand.score > best.score) best = cand;
+      }
+      if (best) { seen.add(best.phrase); out.push('"' + best.phrase + '"'); }
+    }
+    return out;
+  }
+
+  // Broader unquoted queries for source discovery: the document's most
+  // frequent distinctive content terms, combined into a few searches.
+  function topicQueries(text, count) {
+    count = count || 3;
+    var doc = tokenize(text);
+    var freq = new Map(), firstRaw = new Map();
+    doc.tokens.forEach(function (t) {
+      if (STOPWORDS.has(t.norm) || t.norm.length < 4 || /^\d+$/.test(t.norm)) return;
+      freq.set(t.stem, (freq.get(t.stem) || 0) + 1);
+      if (!firstRaw.has(t.stem)) firstRaw.set(t.stem, t.raw.toLowerCase());
+    });
+    var terms = Array.from(freq.entries())
+      .filter(function (e) { return e[1] >= 2; })
+      .sort(function (a, b) {
+        return (b[1] * (firstRaw.get(b[0]).length >= 6 ? 1.4 : 1)) -
+               (a[1] * (firstRaw.get(a[0]).length >= 6 ? 1.4 : 1));
+      })
+      .slice(0, count * 4)
+      .map(function (e) { return firstRaw.get(e[0]); });
+    if (terms.length < 3) return terms.length ? [terms.join(" ")] : [];
+    var out = [];
+    for (var q = 0; q < count && q * 4 < terms.length; q++) {
+      out.push(terms.slice(q * 4, q * 4 + 4).join(" "));
+    }
+    return out;
+  }
+
   return {
     tokenize: tokenize,
     normToken: normToken,
@@ -691,6 +766,8 @@
     containment: containment,
     analyze: analyze,
     crossCompare: crossCompare,
+    distinctiveQueries: distinctiveQueries,
+    topicQueries: topicQueries,
     CLS: CLS,
     DEFAULT_OPTS: DEFAULT_OPTS
   };
