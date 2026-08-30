@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aleris Originality</title>
+  <meta name="description" content="Team plagiarism checker — verbatim, edited and paraphrased overlap with evidence, entirely in your browser.">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%230f2038'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23ff9000' font-family='Georgia,serif' font-weight='bold'%3EA%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wordmark">Aleris<span class="dot">·</span>Originality
+      <small>Similarity &amp; provenance checker</small>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" id="tab-check" role="tab" aria-selected="true" data-view="check">Check</button>
+      <button class="tab" id="tab-cross" role="tab" aria-selected="false" data-view="cross">Cross-compare</button>
+      <button class="tab" id="tab-library" role="tab" aria-selected="false" data-view="library">Library <span id="lib-count"></span></button>
+    </nav>
+    <span class="privacy-chip" title="Analysis runs entirely in this page. Documents are only shared if you save them to the team library.">Analyzed in-browser · nothing sent to a server</span>
+  </header>
+
+  <main class="wrap">
+
+    <!-- ================= CHECK ================= -->
+    <section class="view" id="view-check" role="tabpanel" aria-labelledby="tab-check">
+      <h2 class="view-title">Check a document</h2>
+      <p class="view-sub">Paste or import the document to screen. It is compared against every
+        document in your library — or a second pasted text — through four detection layers:
+        verbatim runs, edited near-matches, paraphrase candidates, and document fingerprints.</p>
+
+      <div class="stack">
+        <div class="card stack" id="check-input-card">
+          <div class="row spread">
+            <div class="seg" role="group" aria-label="Comparison mode">
+              <button id="mode-library" aria-pressed="true">Against library</button>
+              <button id="mode-adhoc" aria-pressed="false">Against pasted text</button>
+            </div>
+            <span class="hint" id="scope-note"></span>
+          </div>
+
+          <label class="fld">Document title
+            <input type="text" id="check-title" placeholder="e.g. Q3 whitepaper draft">
+          </label>
+          <label class="fld">Text to check
+            <textarea id="check-text" placeholder="Paste the document here…" spellcheck="false"></textarea>
+          </label>
+          <div class="drop" id="check-drop">…or drop / <button class="btn btn-sm" id="check-browse" type="button">browse</button> a .txt, .md or .docx file</div>
+
+          <div id="adhoc-wrap" hidden>
+            <label class="fld">Compare against this text
+              <textarea id="adhoc-text" placeholder="Paste the reference text here…" spellcheck="false"></textarea>
+            </label>
+            <div class="drop" id="adhoc-drop" style="margin-top:.6rem">…or drop / <button class="btn btn-sm" id="adhoc-browse" type="button">browse</button> a file for the reference text</div>
+          </div>
+
+          <div class="row" id="options-row">
+            <label class="check"><input type="checkbox" id="opt-quotes" checked> Exclude quoted passages</label>
+            <label class="check"><input type="checkbox" id="opt-refs" checked> Exclude references section</label>
+            <label class="check">Min. verbatim run
+              <select id="opt-minrun" aria-label="Minimum verbatim run length in words">
+                <option value="4">4 words</option>
+                <option value="5" selected>5 words</option>
+                <option value="6">6 words</option>
+                <option value="8">8 words</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row">
+            <button class="btn btn-primary" id="run-check">Run check</button>
+            <button class="btn" id="load-sample" type="button">Load sample</button>
+            <div class="grow"></div>
+            <span class="hint" id="check-status" role="status" aria-live="polite"></span>
+          </div>
+          <div class="progress" id="check-progress" hidden><div></div></div>
+        </div>
+
+        <div id="report" hidden></div>
+      </div>
+    </section>
+
+    <!-- ================= CROSS-COMPARE ================= -->
+    <section class="view" id="view-cross" role="tabpanel" aria-labelledby="tab-cross" hidden>
+      <h2 class="view-title">Cross-compare the library</h2>
+      <p class="view-sub">Screens every pair of library documents against each other — the way you
+        would check a batch of submissions for shared or recycled text. Cell values are the higher
+        of the two directional similarity scores.</p>
+      <div class="card">
+        <div class="row spread">
+          <span class="hint" id="cross-scope"></span>
+          <button class="btn btn-primary" id="run-cross">Compare all pairs</button>
+        </div>
+        <div class="progress" id="cross-progress" hidden style="margin-top:.8rem"><div></div></div>
+        <div id="cross-result"></div>
+      </div>
+    </section>
+
+    <!-- ================= LIBRARY ================= -->
+    <section class="view" id="view-library" role="tabpanel" aria-labelledby="tab-library" hidden>
+      <h2 class="view-title">Reference library</h2>
+      <p class="view-sub">The documents every check is screened against — prior deliverables,
+        published pieces, other submissions. Kept in this browser; share it with the team via the
+        team library or a JSON export.</p>
+
+      <div class="stack">
+        <div class="card" id="team-card" hidden></div>
+
+        <div class="card stack">
+          <h3 style="font-size:1.02rem">Add documents</h3>
+          <div class="drop" id="lib-drop">Drop .txt, .md or .docx files here (multiple allowed), or
+            <button class="btn btn-sm" id="lib-browse" type="button">browse</button></div>
+          <details>
+            <summary class="hint" style="cursor:pointer">…or paste a document manually</summary>
+            <div class="stack" style="margin-top:.8rem">
+              <div class="row">
+                <label class="fld grow">Title <input type="text" id="lib-title" placeholder="e.g. 2025 annual report"></label>
+                <label class="fld grow">Author <span class="hint">(optional)</span><input type="text" id="lib-author"></label>
+              </div>
+              <label class="fld">Text <textarea id="lib-text" spellcheck="false"></textarea></label>
+              <div class="row"><button class="btn" id="lib-add">Add to library</button></div>
+            </div>
+          </details>
+          <div class="row">
+            <button class="btn btn-sm" id="lib-export" type="button">Export library (.json)</button>
+            <button class="btn btn-sm" id="lib-import" type="button">Import library (.json)</button>
+            <span class="hint">Exports let teammates load the exact same reference set.</span>
+          </div>
+        </div>
+
+        <div id="lib-list"></div>
+      </div>
+    </section>
+
+    <p class="footer-note">Aleris Originality measures textual overlap and shows its evidence.
+      A high score is a map for a human reviewer, not a verdict on a person — always read the
+      matched passages before drawing conclusions.</p>
+  </main>
+
+  <input type="file" id="file-input" multiple accept=".txt,.md,.markdown,.text,.docx,text/plain,text/markdown" hidden>
+  <input type="file" id="json-input" accept=".json,application/json" hidden>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

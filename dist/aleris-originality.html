@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aleris Originality</title>
+  <meta name="description" content="Team plagiarism checker — verbatim, edited and paraphrased overlap with evidence, entirely in your browser.">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Aleris Originality — instrument styling.
+   Brand: warm parchment + deep navy + orange (carried from the Aleris site).
+   Severity palette validated for CVD separation in both themes; highlights
+   always pair color with underline style, so class is never color-alone. */
+
+:root {
+  color-scheme: light;
+  --bg: #f6f1e7;
+  --card: #fdfbf6;
+  --card-2: #f2ebdc;
+  --ink: #12294a;
+  --ink-2: #4a5872;
+  --muted: #75809a;
+  --hairline: #e5dcc7;
+  --line: #d3c7ab;
+  --bar: #0f2038;
+  --bar-ink: #f2e9d5;
+  --bar-muted: #97a5c0;
+  --accent: #ff9000;
+  --accent-hover: #f08000;
+  --accent-ink: #142a4d;
+  --focus: #c96f00;
+  --good: #177239;
+  --good-wash: rgba(23, 114, 57, 0.1);
+  --c-verbatim: #b3352b;
+  --c-near: #bd8000;
+  --c-para: #5a49c8;
+  --w-verbatim: rgba(179, 53, 43, 0.16);
+  --w-near: rgba(189, 128, 0, 0.17);
+  --w-para: rgba(90, 73, 200, 0.13);
+  --c-quoted: #6d7688;
+  --w-quoted: rgba(109, 118, 136, 0.12);
+  --heat-0: #efe8d8;
+  --heat-1: #cfd9e9;
+  --heat-2: #a7bedd;
+  --heat-3: #7b9dcb;
+  --heat-4: #4f77ad;
+  --heat-5: #2b5488;
+  --heat-6: #12335f;
+  --heat-ink-lo: #12294a;
+  --heat-ink-hi: #f2e9d5;
+  --shadow: 0 10px 30px rgba(18, 41, 74, 0.08);
+  --danger: #a83232;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0b1526;
+    --card: #13233d;
+    --card-2: #0f1c31;
+    --ink: #f1e9d7;
+    --ink-2: #b5bfd3;
+    --muted: #8792ab;
+    --hairline: #253758;
+    --line: #33496f;
+    --bar: #081020;
+    --bar-ink: #f2e9d5;
+    --bar-muted: #8f9cb8;
+    --accent: #ffa033;
+    --accent-hover: #ffae52;
+    --accent-ink: #10203c;
+    --focus: #ffa033;
+    --good: #4eb56f;
+    --good-wash: rgba(78, 181, 111, 0.14);
+    --c-verbatim: #c34b3c;
+    --c-near: #ba8a00;
+    --c-para: #8579e0;
+    --w-verbatim: rgba(195, 75, 60, 0.24);
+    --w-near: rgba(186, 138, 0, 0.22);
+    --w-para: rgba(133, 121, 224, 0.22);
+    --c-quoted: #93a0b8;
+    --w-quoted: rgba(147, 160, 184, 0.14);
+    --heat-0: #142238;
+    --heat-1: #1d3355;
+    --heat-2: #28466f;
+    --heat-3: #3a5f8e;
+    --heat-4: #5379a9;
+    --heat-5: #7b9bc7;
+    --heat-6: #aec7e8;
+    --heat-ink-lo: #b5bfd3;
+    --heat-ink-hi: #0b1526;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    --danger: #e06c5c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1526;
+  --card: #13233d;
+  --card-2: #0f1c31;
+  --ink: #f1e9d7;
+  --ink-2: #b5bfd3;
+  --muted: #8792ab;
+  --hairline: #253758;
+  --line: #33496f;
+  --bar: #081020;
+  --bar-ink: #f2e9d5;
+  --bar-muted: #8f9cb8;
+  --accent: #ffa033;
+  --accent-hover: #ffae52;
+  --accent-ink: #10203c;
+  --focus: #ffa033;
+  --good: #4eb56f;
+  --good-wash: rgba(78, 181, 111, 0.14);
+  --c-verbatim: #c34b3c;
+  --c-near: #ba8a00;
+  --c-para: #8579e0;
+  --w-verbatim: rgba(195, 75, 60, 0.24);
+  --w-near: rgba(186, 138, 0, 0.22);
+  --w-para: rgba(133, 121, 224, 0.22);
+  --c-quoted: #93a0b8;
+  --w-quoted: rgba(147, 160, 184, 0.14);
+  --heat-0: #142238;
+  --heat-1: #1d3355;
+  --heat-2: #28466f;
+  --heat-3: #3a5f8e;
+  --heat-4: #5379a9;
+  --heat-5: #7b9bc7;
+  --heat-6: #aec7e8;
+  --heat-ink-lo: #b5bfd3;
+  --heat-ink-hi: #0b1526;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --danger: #e06c5c;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.55 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0 0 0.7em; }
+button { font: inherit; cursor: pointer; }
+:is(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- top bar ---------- */
+.topbar {
+  background: var(--bar);
+  color: var(--bar-ink);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.65rem 1.25rem;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.wordmark {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  font-size: 1.22rem;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.wordmark .dot { color: var(--accent); }
+.wordmark small {
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bar-muted);
+  display: block;
+  margin-top: -2px;
+}
+.tabs { display: flex; gap: 0.25rem; flex: 1; }
+.tab {
+  background: none;
+  border: 0;
+  color: var(--bar-muted);
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.tab:hover { color: var(--bar-ink); }
+.tab[aria-selected="true"] {
+  background: rgba(255, 158, 27, 0.16);
+  color: var(--accent);
+  font-weight: 600;
+}
+.privacy-chip {
+  font-size: 0.72rem;
+  color: var(--bar-muted);
+  border: 1px solid rgba(151, 165, 192, 0.35);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  white-space: nowrap;
+}
+
+/* ---------- layout ---------- */
+.wrap { max-width: 1160px; margin: 0 auto; padding: 1.6rem 1.25rem 4rem; }
+#report, #cross-result, #cross-duo { scroll-margin-top: 76px; }
+.view[hidden] { display: none; }
+.view-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+.view-sub { color: var(--ink-2); max-width: 62ch; margin-bottom: 1.4rem; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 1.25rem 1.4rem;
+  box-shadow: var(--shadow);
+}
+.stack { display: grid; gap: 1.25rem; }
+.row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; }
+.spread { justify-content: space-between; }
+
+/* ---------- forms ---------- */
+label.fld { display: grid; gap: 0.3rem; font-size: 0.8rem; font-weight: 600; color: var(--ink-2); }
+input[type="text"], textarea, select {
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  width: 100%;
+}
+textarea { min-height: 180px; resize: vertical; font-family: "Source Serif 4", Georgia, serif; font-size: 0.95rem; }
+input[type="range"] { accent-color: var(--accent); }
+input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+.check { display: inline-flex; gap: 0.45rem; align-items: center; font-size: 0.84rem; color: var(--ink-2); font-weight: 500; }
+.hint { font-size: 0.78rem; color: var(--muted); }
+
+.btn {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.5rem 1.05rem;
+  font-weight: 600;
+  font-size: 0.86rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { border-color: var(--focus); }
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-danger { color: var(--danger); }
+.btn-danger:hover { border-color: var(--danger); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.btn-sm { padding: 0.3rem 0.75rem; font-size: 0.78rem; }
+
+.drop {
+  border: 1.5px dashed var(--line);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.83rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+.drop.armed { border-color: var(--accent); background: var(--card-2); color: var(--ink-2); }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button {
+  border: 0; background: none; color: var(--ink-2);
+  padding: 0.4rem 0.9rem; font-size: 0.82rem; font-weight: 600;
+}
+.seg button[aria-pressed="true"] { background: var(--bar); color: var(--bar-ink); }
+
+/* ---------- progress ---------- */
+.progress { height: 6px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
+.progress > div { height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width 0.2s; }
+
+/* ---------- verdict band ---------- */
+.verdict-band {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.5rem 2.5rem;
+  align-items: center;
+}
+.hero-score { display: flex; align-items: baseline; gap: 0.4rem; }
+.hero-score .num {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  font-size: 4.4rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.hero-score .pct { font-family: "Playfair Display", Georgia, serif; font-size: 2rem; color: var(--ink-2); }
+.verdict-label {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.3rem 0.8rem; border-radius: 999px;
+}
+.verdict-low      { background: var(--good-wash); color: var(--good); }
+.verdict-moderate { background: var(--w-near); color: var(--c-near); }
+.verdict-high     { background: var(--w-verbatim); color: var(--c-verbatim); }
+.verdict-severe   { background: var(--c-verbatim); color: var(--card); }
+.verdict-meta { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+
+.comp-bar {
+  display: flex; height: 14px; border-radius: 7px; overflow: hidden;
+  background: var(--card-2); margin: 0.4rem 0 0.9rem;
+}
+.comp-bar > span { height: 100%; }
+.comp-bar > span + span { border-left: 2px solid var(--card); }
+.seg-verbatim { background: var(--c-verbatim); }
+.seg-near { background: var(--c-near); }
+.seg-para { background: var(--c-para); }
+.seg-quoted { background: var(--c-quoted); }
+.seg-clear { background: var(--card-2); }
+
+.legend { display: flex; gap: 1.1rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--ink-2); }
+.legend .key { display: inline-flex; align-items: center; gap: 0.4rem; }
+.swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+.tile { background: var(--card-2); border-radius: 10px; padding: 0.6rem 0.8rem; }
+.tile .v { font-family: "IBM Plex Mono", ui-monospace, monospace; font-weight: 500; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.tile .k { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* ---------- sentence map ---------- */
+.sent-map { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 0.9rem; }
+.sent-map i {
+  height: 10px; flex: 1 0 8px; max-width: 26px; border-radius: 2px;
+  background: var(--card-2); border: 1px solid var(--hairline); cursor: pointer;
+}
+.sent-map i.c3 { background: var(--c-verbatim); border-color: var(--c-verbatim); }
+.sent-map i.c2 { background: var(--c-near); border-color: var(--c-near); }
+.sent-map i.c1 { background: var(--c-para); border-color: var(--c-para); }
+
+/* ---------- source rows ---------- */
+.src-row {
+  display: grid;
+  grid-template-columns: 1fr 180px 72px auto;
+  gap: 1rem; align-items: center;
+  padding: 0.7rem 0.4rem;
+  border-top: 1px solid var(--hairline);
+}
+.src-row:first-child { border-top: 0; }
+.src-row .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.src-row .sub { font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+.mini-bar { height: 8px; background: var(--card-2); border-radius: 4px; overflow: hidden; }
+.mini-bar > div { height: 100%; background: var(--heat-4); border-radius: 4px; }
+.src-row .pct { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; text-align: right; font-size: 0.9rem; }
+@media (max-width: 720px) {
+  .src-row { grid-template-columns: 1fr 72px auto; }
+  .src-row .mini-bar { display: none; }
+}
+
+/* ---------- document panels + highlights ---------- */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+@media (max-width: 860px) { .duo { grid-template-columns: 1fr; } }
+.panel { border: 1px solid var(--hairline); border-radius: 10px; background: var(--card); min-width: 0; }
+.panel h4 {
+  margin: 0; padding: 0.55rem 0.9rem;
+  font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); border-bottom: 1px solid var(--hairline);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.doc-text {
+  padding: 0.9rem 1rem;
+  max-height: 430px;
+  overflow: auto;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+mark {
+  background: none; color: inherit; border-radius: 2px;
+  padding: 0.05em 0; scroll-margin: 90px;
+  text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
+}
+mark.m3 { background: var(--w-verbatim); text-decoration-color: var(--c-verbatim); text-decoration-style: solid; }
+mark.m2 { background: var(--w-near); text-decoration-color: var(--c-near); text-decoration-style: dashed; }
+mark.m1 { background: var(--w-para); text-decoration-color: var(--c-para); text-decoration-style: dotted; }
+mark.m4, mark.m5 { background: var(--w-quoted); text-decoration-color: var(--c-quoted); text-decoration-style: dotted; text-decoration-thickness: 1px; }
+mark[data-jump] { cursor: pointer; }
+mark.flash { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+details.src-detail { border-top: 1px solid var(--hairline); }
+details.src-detail > summary {
+  list-style: none; cursor: pointer; padding: 0.15rem 0;
+}
+details.src-detail > summary::-webkit-details-marker { display: none; }
+details.src-detail > summary .src-row { border-top: 0; }
+details.src-detail[open] > summary { border-bottom: 1px dashed var(--hairline); }
+.detail-body { padding: 0.4rem 0.4rem 1rem; }
+
+/* ---------- heatmap ---------- */
+.heat-scroll { overflow-x: auto; }
+table.heat { border-collapse: collapse; margin-top: 0.5rem; }
+table.heat th, table.heat td { padding: 0; }
+table.heat th {
+  font-size: 0.72rem; font-weight: 600; color: var(--ink-2);
+  padding: 0.3rem 0.5rem; text-align: right; max-width: 180px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+table.heat thead th {
+  writing-mode: vertical-rl; transform: rotate(200grad);
+  text-align: left; vertical-align: bottom; max-height: 150px; padding: 0.4rem 0.25rem;
+}
+table.heat td.cell {
+  width: 46px; height: 40px; text-align: center;
+  border: 2px solid var(--card); border-radius: 6px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.72rem;
+  font-variant-numeric: tabular-nums; cursor: pointer;
+}
+table.heat td.self { background: var(--card-2); cursor: default; }
+
+/* ---------- library ---------- */
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.9rem; }
+.lib-card { display: grid; gap: 0.5rem; align-content: start; }
+.lib-card .t { font-weight: 600; line-height: 1.3; }
+.lib-card .meta { font-size: 0.76rem; color: var(--muted); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.badge {
+  display: inline-block; font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.15rem 0.5rem; border-radius: 999px;
+}
+.badge-team { background: var(--good-wash); color: var(--good); }
+.badge-local { background: var(--card-2); color: var(--muted); border: 1px solid var(--hairline); }
+
+/* ---------- misc ---------- */
+.note {
+  border-left: 3px solid var(--accent);
+  background: var(--card-2);
+  padding: 0.6rem 0.9rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.84rem;
+  color: var(--ink-2);
+}
+.toast {
+  position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+  background: var(--bar); color: var(--bar-ink);
+  padding: 0.6rem 1.1rem; border-radius: 999px; font-size: 0.85rem;
+  box-shadow: var(--shadow); z-index: 60; max-width: 90vw;
+}
+.empty { text-align: center; color: var(--muted); padding: 2.2rem 1rem; }
+.empty .big { font-family: "Playfair Display", Georgia, serif; font-size: 1.25rem; color: var(--ink-2); margin-bottom: 0.4rem; }
+hr.rule { border: 0; border-top: 1px solid var(--hairline); margin: 1.1rem 0; }
+.footer-note { margin-top: 2.5rem; text-align: center; font-size: 0.76rem; color: var(--muted); max-width: 68ch; margin-left: auto; margin-right: auto; }
+
+@media print {
+  .topbar, .no-print { display: none !important; }
+  .card { box-shadow: none; border-color: #bbb; }
+  .doc-text { max-height: none; }
+  body { background: #fff; }
+}
+
+</style>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%230f2038'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23ff9000' font-family='Georgia,serif' font-weight='bold'%3EA%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wordmark">Aleris<span class="dot">·</span>Originality
+      <small>Similarity &amp; provenance checker</small>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" id="tab-check" role="tab" aria-selected="true" data-view="check">Check</button>
+      <button class="tab" id="tab-cross" role="tab" aria-selected="false" data-view="cross">Cross-compare</button>
+      <button class="tab" id="tab-library" role="tab" aria-selected="false" data-view="library">Library <span id="lib-count"></span></button>
+    </nav>
+    <span class="privacy-chip" title="Analysis runs entirely in this page. Documents are only shared if you save them to the team library.">Analyzed in-browser · nothing sent to a server</span>
+  </header>
+
+  <main class="wrap">
+
+    <!-- ================= CHECK ================= -->
+    <section class="view" id="view-check" role="tabpanel" aria-labelledby="tab-check">
+      <h2 class="view-title">Check a document</h2>
+      <p class="view-sub">Paste or import the document to screen. It is compared against every
+        document in your library — or a second pasted text — through four detection layers:
+        verbatim runs, edited near-matches, paraphrase candidates, and document fingerprints.</p>
+
+      <div class="stack">
+        <div class="card stack" id="check-input-card">
+          <div class="row spread">
+            <div class="seg" role="group" aria-label="Comparison mode">
+              <button id="mode-library" aria-pressed="true">Against library</button>
+              <button id="mode-adhoc" aria-pressed="false">Against pasted text</button>
+            </div>
+            <span class="hint" id="scope-note"></span>
+          </div>
+
+          <label class="fld">Document title
+            <input type="text" id="check-title" placeholder="e.g. Q3 whitepaper draft">
+          </label>
+          <label class="fld">Text to check
+            <textarea id="check-text" placeholder="Paste the document here…" spellcheck="false"></textarea>
+          </label>
+          <div class="drop" id="check-drop">…or drop / <button class="btn btn-sm" id="check-browse" type="button">browse</button> a .txt, .md or .docx file</div>
+
+          <div id="adhoc-wrap" hidden>
+            <label class="fld">Compare against this text
+              <textarea id="adhoc-text" placeholder="Paste the reference text here…" spellcheck="false"></textarea>
+            </label>
+            <div class="drop" id="adhoc-drop" style="margin-top:.6rem">…or drop / <button class="btn btn-sm" id="adhoc-browse" type="button">browse</button> a file for the reference text</div>
+          </div>
+
+          <div class="row" id="options-row">
+            <label class="check"><input type="checkbox" id="opt-quotes" checked> Exclude quoted passages</label>
+            <label class="check"><input type="checkbox" id="opt-refs" checked> Exclude references section</label>
+            <label class="check">Min. verbatim run
+              <select id="opt-minrun" aria-label="Minimum verbatim run length in words">
+                <option value="4">4 words</option>
+                <option value="5" selected>5 words</option>
+                <option value="6">6 words</option>
+                <option value="8">8 words</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row">
+            <button class="btn btn-primary" id="run-check">Run check</button>
+            <button class="btn" id="load-sample" type="button">Load sample</button>
+            <div class="grow"></div>
+            <span class="hint" id="check-status" role="status" aria-live="polite"></span>
+          </div>
+          <div class="progress" id="check-progress" hidden><div></div></div>
+        </div>
+
+        <div id="report" hidden></div>
+      </div>
+    </section>
+
+    <!-- ================= CROSS-COMPARE ================= -->
+    <section class="view" id="view-cross" role="tabpanel" aria-labelledby="tab-cross" hidden>
+      <h2 class="view-title">Cross-compare the library</h2>
+      <p class="view-sub">Screens every pair of library documents against each other — the way you
+        would check a batch of submissions for shared or recycled text. Cell values are the higher
+        of the two directional similarity scores.</p>
+      <div class="card">
+        <div class="row spread">
+          <span class="hint" id="cross-scope"></span>
+          <button class="btn btn-primary" id="run-cross">Compare all pairs</button>
+        </div>
+        <div class="progress" id="cross-progress" hidden style="margin-top:.8rem"><div></div></div>
+        <div id="cross-result"></div>
+      </div>
+    </section>
+
+    <!-- ================= LIBRARY ================= -->
+    <section class="view" id="view-library" role="tabpanel" aria-labelledby="tab-library" hidden>
+      <h2 class="view-title">Reference library</h2>
+      <p class="view-sub">The documents every check is screened against — prior deliverables,
+        published pieces, other submissions. Kept in this browser; share it with the team via the
+        team library or a JSON export.</p>
+
+      <div class="stack">
+        <div class="card" id="team-card" hidden></div>
+
+        <div class="card stack">
+          <h3 style="font-size:1.02rem">Add documents</h3>
+          <div class="drop" id="lib-drop">Drop .txt, .md or .docx files here (multiple allowed), or
+            <button class="btn btn-sm" id="lib-browse" type="button">browse</button></div>
+          <details>
+            <summary class="hint" style="cursor:pointer">…or paste a document manually</summary>
+            <div class="stack" style="margin-top:.8rem">
+              <div class="row">
+                <label class="fld grow">Title <input type="text" id="lib-title" placeholder="e.g. 2025 annual report"></label>
+                <label class="fld grow">Author <span class="hint">(optional)</span><input type="text" id="lib-author"></label>
+              </div>
+              <label class="fld">Text <textarea id="lib-text" spellcheck="false"></textarea></label>
+              <div class="row"><button class="btn" id="lib-add">Add to library</button></div>
+            </div>
+          </details>
+          <div class="row">
+            <button class="btn btn-sm" id="lib-export" type="button">Export library (.json)</button>
+            <button class="btn btn-sm" id="lib-import" type="button">Import library (.json)</button>
+            <span class="hint">Exports let teammates load the exact same reference set.</span>
+          </div>
+        </div>
+
+        <div id="lib-list"></div>
+      </div>
+    </section>
+
+    <p class="footer-note">Aleris Originality measures textual overlap and shows its evidence.
+      A high score is a map for a human reviewer, not a verdict on a person — always read the
+      matched passages before drawing conclusions.</p>
+  </main>
+
+  <input type="file" id="file-input" multiple accept=".txt,.md,.markdown,.text,.docx,text/plain,text/markdown" hidden>
+  <input type="file" id="json-input" accept=".json,application/json" hidden>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/*
+ * Aleris Originality — detection engine.
+ *
+ * Pure text analysis, no DOM. Runs in the browser (window.AlerisEngine)
+ * and in Node (module.exports) so the same code is unit-tested directly.
+ *
+ * Detection layers, combined per token of the checked document:
+ *   1. Normalization — NFKC, casefold, homoglyph folding (Cyrillic/Greek
+ *      look-alikes), zero-width/soft-hyphen stripping, diacritic removal.
+ *      Defeats character-substitution and invisible-character evasion.
+ *   2. Verbatim spans — word-trigram seeding + greedy extension to maximal
+ *      runs. Catches copied passages even when surrounded by new text.
+ *   3. Sentence alignment — every sentence scored against its best source
+ *      sentence (token-sequence LCS + stemmed content-word Jaccard).
+ *      Catches light edits, word swaps, and reordering-style paraphrase.
+ *   4. Winnowed fingerprints (MOSS-style) — document-level containment,
+ *      robust to reordering and interleaving.
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.AlerisEngine = factory();
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  /* ------------------------------------------------------------------ *
+   * Normalization
+   * ------------------------------------------------------------------ */
+
+  // Common Cyrillic/Greek characters that render identically (or nearly so)
+  // to Latin letters — a classic way to sneak copied text past a checker.
+  var HOMOGLYPHS = {
+    "а": "a", "е": "e", "о": "o", "р": "p", "с": "c",
+    "у": "y", "х": "x", "і": "i", "ј": "j", "һ": "h",
+    "ѕ": "s", "ґ": "r", "А": "a", "В": "b", "Е": "e",
+    "К": "k", "М": "m", "Н": "h", "О": "o", "Р": "p",
+    "С": "c", "Т": "t", "Х": "x", "Ѕ": "s", "І": "i",
+    "α": "a", "ο": "o", "ε": "e", "ν": "v", "ρ": "p",
+    "τ": "t", "υ": "u", "κ": "k", "Α": "a", "Β": "b",
+    "Ε": "e", "Ζ": "z", "Η": "h", "Ι": "i", "Κ": "k",
+    "Μ": "m", "Ν": "n", "Ο": "o", "Ρ": "p", "Τ": "t",
+    "Υ": "y", "Χ": "x", "ℓ": "l", "ǃ": "!"
+  };
+
+  var ZERO_WIDTH_RE = /[\u200B-\u200F\u2060\uFEFF\u00AD\u180E]/g;
+  var ZERO_WIDTH_ONE = /[\u200B-\u200F\u2060\uFEFF\u00AD\u180E]/;
+  var COMBINING_RE = /[\u0300-\u036f]/g;
+  var WORD_RE = /[\p{L}\p{N}][\p{L}\p{N}'’ʼ-]*/gu;
+
+  function foldChar(ch) {
+    return HOMOGLYPHS[ch] || ch;
+  }
+
+  // Normalize one raw token to its canonical comparison form.
+  function normToken(raw) {
+    var s = raw.normalize("NFKC").toLowerCase();
+    var out = "";
+    for (var i = 0; i < s.length; i++) out += foldChar(s[i]);
+    out = out.normalize("NFD").replace(COMBINING_RE, "");
+    out = out.replace(/['’ʼ-]/g, "");
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Porter stemmer (standard algorithm, compact)
+   * ------------------------------------------------------------------ */
+
+  var STEP2 = [["ational","ate"],["tional","tion"],["enci","ence"],["anci","ance"],
+    ["izer","ize"],["bli","ble"],["alli","al"],["entli","ent"],["eli","e"],
+    ["ousli","ous"],["ization","ize"],["ation","ate"],["ator","ate"],["alism","al"],
+    ["iveness","ive"],["fulness","ful"],["ousness","ous"],["aliti","al"],
+    ["iviti","ive"],["biliti","ble"],["logi","log"]];
+  var STEP3 = [["icate","ic"],["ative",""],["alize","al"],["iciti","ic"],
+    ["ical","ic"],["ful",""],["ness",""]];
+  var STEP4 = ["al","ance","ence","er","ic","able","ible","ant","ement","ment",
+    "ent","ion","ou","ism","ate","iti","ous","ive","ize"];
+
+  function isCons(w, i) {
+    var c = w[i];
+    if ("aeiou".indexOf(c) >= 0) return false;
+    if (c === "y") return i === 0 ? true : !isCons(w, i - 1);
+    return true;
+  }
+  function measure(w) {
+    var m = 0, i = 0, n = w.length;
+    while (i < n && isCons(w, i)) i++;
+    while (i < n) {
+      while (i < n && !isCons(w, i)) i++;
+      if (i >= n) break;
+      m++;
+      while (i < n && isCons(w, i)) i++;
+    }
+    return m;
+  }
+  function hasVowel(w) {
+    for (var i = 0; i < w.length; i++) if (!isCons(w, i)) return true;
+    return false;
+  }
+  function cvc(w) {
+    var n = w.length;
+    if (n < 3) return false;
+    if (!isCons(w, n - 1) || isCons(w, n - 2) || !isCons(w, n - 3)) return false;
+    return "wxy".indexOf(w[n - 1]) < 0;
+  }
+  function stem(word) {
+    var w = word;
+    if (w.length < 3) return w;
+    // 1a
+    if (w.endsWith("sses")) w = w.slice(0, -2);
+    else if (w.endsWith("ies")) w = w.slice(0, -2);
+    else if (!w.endsWith("ss") && w.endsWith("s")) w = w.slice(0, -1);
+    // 1b
+    var flag = false;
+    if (w.endsWith("eed")) {
+      if (measure(w.slice(0, -3)) > 0) w = w.slice(0, -1);
+    } else if (w.endsWith("ed") && hasVowel(w.slice(0, -2))) {
+      w = w.slice(0, -2); flag = true;
+    } else if (w.endsWith("ing") && hasVowel(w.slice(0, -3))) {
+      w = w.slice(0, -3); flag = true;
+    }
+    if (flag) {
+      if (w.endsWith("at") || w.endsWith("bl") || w.endsWith("iz")) w += "e";
+      else if (w.length >= 2 && w[w.length - 1] === w[w.length - 2] &&
+        isCons(w, w.length - 1) && "lsz".indexOf(w[w.length - 1]) < 0) w = w.slice(0, -1);
+      else if (measure(w) === 1 && cvc(w)) w += "e";
+    }
+    // 1c
+    if (w.endsWith("y") && hasVowel(w.slice(0, -1))) w = w.slice(0, -1) + "i";
+    // 2
+    for (var i = 0; i < STEP2.length; i++) {
+      var suf = STEP2[i][0];
+      if (w.endsWith(suf)) {
+        var base = w.slice(0, -suf.length);
+        if (measure(base) > 0) w = base + STEP2[i][1];
+        break;
+      }
+    }
+    // 3
+    for (i = 0; i < STEP3.length; i++) {
+      suf = STEP3[i][0];
+      if (w.endsWith(suf)) {
+        base = w.slice(0, -suf.length);
+        if (measure(base) > 0) w = base + STEP3[i][1];
+        break;
+      }
+    }
+    // 4
+    for (i = 0; i < STEP4.length; i++) {
+      suf = STEP4[i];
+      if (w.endsWith(suf)) {
+        base = w.slice(0, -suf.length);
+        if (suf === "ion") {
+          if (measure(base) > 1 && (base.endsWith("s") || base.endsWith("t"))) w = base;
+        } else if (measure(base) > 1) w = base;
+        break;
+      }
+    }
+    // 5a
+    if (w.endsWith("e")) {
+      base = w.slice(0, -1);
+      if (measure(base) > 1 || (measure(base) === 1 && !cvc(base))) w = base;
+    }
+    // 5b
+    if (measure(w) > 1 && w.endsWith("ll")) w = w.slice(0, -1);
+    return w;
+  }
+
+  var STOPWORDS = new Set(("a about above after again all also am an and any are as at be because been before being below between both but by can could did do does doing down during each few for from further had has have having he her here hers him his how i if in into is it its itself just me more most my no nor not now of off on once only or other our ours out over own same she should so some such than that the their theirs them then there these they this those through to too under until up very was we were what when where which while who whom why will with would you your yours").split(" "));
+
+  /* ------------------------------------------------------------------ *
+   * Tokenization + sentence segmentation
+   * ------------------------------------------------------------------ */
+
+  var ABBREV = new Set(["dr","mr","mrs","ms","prof","sr","jr","st","vs","etc","fig","eg","ie","al","no","vol","pp","cf","approx","dept","est","inc","ltd","co"]);
+
+  // Tokenize `text`, keeping char offsets into the ORIGINAL string so every
+  // finding maps back to exact highlight positions.
+  function tokenize(text) {
+    var clean = text.replace(ZERO_WIDTH_RE, "");
+    // Zero-width strip changes offsets; build an offset map only if needed.
+    var offsetMap = null;
+    if (clean.length !== text.length) {
+      offsetMap = new Array(clean.length);
+      var j = 0;
+      for (var i = 0; i < text.length; i++) {
+        if (!ZERO_WIDTH_ONE.test(text[i])) { offsetMap[j] = i; j++; }
+      }
+    }
+    var tokens = [];
+    var m;
+    WORD_RE.lastIndex = 0;
+    while ((m = WORD_RE.exec(clean)) !== null) {
+      // Split hyphenated compounds ("sentence-level" -> "sentence","level")
+      // so hyphenated and open spellings of the same phrase align.
+      var parts = m[0].split(/[-‐‑]+/);
+      var offset = 0;
+      for (var p = 0; p < parts.length; p++) {
+        var piece = parts[p];
+        var pieceIdx = m[0].indexOf(piece, offset);
+        offset = pieceIdx + piece.length;
+        var norm = normToken(piece);
+        if (!norm) continue;
+        var startIdx = m.index + pieceIdx;
+        var endIdx = startIdx + piece.length - 1;
+        tokens.push({
+          raw: piece, norm: norm, stem: stem(norm),
+          start: offsetMap ? offsetMap[startIdx] : startIdx,
+          end: (offsetMap ? offsetMap[endIdx] : endIdx) + 1,
+          sent: 0
+        });
+      }
+    }
+    var sentences = segmentSentences(text, tokens);
+    return { text: text, tokens: tokens, sentences: sentences };
+  }
+
+  // Sentence boundaries: terminal punctuation followed by whitespace + an
+  // opener, or any hard line break. Guards against abbreviations and decimals.
+  function segmentSentences(text, tokens) {
+    var boundaries = [0];
+    var re = /[.!?…]+[)"'”’\]]*\s+|\n+/g;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var end = m.index + m[0].length;
+      if (end >= text.length) break;
+      if (m[0][0] !== "\n") {
+        var next = text[end];
+        if (!/[\p{Lu}\p{N}"'“‘(\[••-]/u.test(next)) continue;
+        // decimal like 3.14 — no whitespace group would match, safe; abbreviation guard:
+        var before = text.slice(Math.max(0, m.index - 12), m.index);
+        var wm = before.match(/([\p{L}]+)$/u);
+        if (wm && ABBREV.has(wm[1].toLowerCase()) && wm[1].length <= 6) continue;
+      }
+      if (boundaries[boundaries.length - 1] !== end) boundaries.push(end);
+    }
+    boundaries.push(text.length + 1);
+    var sentences = [];
+    var ti = 0;
+    for (var b = 0; b < boundaries.length - 1; b++) {
+      var s = boundaries[b], e = boundaries[b + 1];
+      var first = ti;
+      while (ti < tokens.length && tokens[ti].start < e) {
+        tokens[ti].sent = sentences.length;
+        ti++;
+      }
+      if (ti > first) {
+        sentences.push({
+          start: tokens[first].start,
+          end: tokens[ti - 1].end,
+          tokenStart: first,
+          tokenCount: ti - first
+        });
+      }
+      if (ti >= tokens.length) break;
+    }
+    return sentences;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Exclusion zones (quoted passages, reference sections)
+   * ------------------------------------------------------------------ */
+
+  var CLS = { NONE: 0, PARAPHRASE: 1, NEAR: 2, VERBATIM: 3, QUOTED: 4, REFS: 5 };
+
+  // Mark tokens inside "..."/“...” pairs (up to maxLen chars) as quoted.
+  function markQuoted(doc, excl) {
+    var text = doc.text;
+    var maxLen = 800;
+    var pairs = [["“", "”"], ['"', '"']];
+    for (var p = 0; p < pairs.length; p++) {
+      var open = pairs[p][0], close = pairs[p][1];
+      var i = 0;
+      while ((i = text.indexOf(open, i)) !== -1) {
+        var j = text.indexOf(close, i + 1);
+        if (j === -1) break;
+        if (j - i <= maxLen) {
+          for (var t = 0; t < doc.tokens.length; t++) {
+            if (doc.tokens[t].start > i && doc.tokens[t].end <= j + 1) excl[t] = CLS.QUOTED;
+            if (doc.tokens[t].start > j) break;
+          }
+        }
+        i = j + 1;
+      }
+    }
+  }
+
+  // Mark everything from a trailing References/Bibliography heading onward.
+  function markReferences(doc, excl) {
+    var re = /^[ \t>#*]*(references|bibliography|works cited|sources|citations)[ \t:]*$/gim;
+    var m, last = -1;
+    while ((m = re.exec(doc.text)) !== null) last = m.index;
+    // Only treat it as a section if it sits in the back half of the document.
+    if (last === -1 || last < doc.text.length * 0.4) return;
+    for (var t = 0; t < doc.tokens.length; t++) {
+      if (doc.tokens[t].start >= last) excl[t] = CLS.REFS;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Layer 2 — verbatim span detection
+   * ------------------------------------------------------------------ */
+
+  var SEED = 3; // trigram seeding
+
+  // All maximal runs of identical normalized tokens between A and B,
+  // at least minRun tokens long. Greedy tiling: longest spans claim their
+  // A-tokens first so overlapping seeds don't double-report.
+  function findVerbatimSpans(tokA, tokB, minRun) {
+    if (tokA.length < SEED || tokB.length < SEED) return [];
+    var index = new Map();
+    for (var j = 0; j + SEED <= tokB.length; j++) {
+      var key = tokB[j].norm + "\u0001" + tokB[j + 1].norm + "\u0001" + tokB[j + 2].norm;
+      var arr = index.get(key);
+      if (arr) arr.push(j); else index.set(key, [j]);
+    }
+    var raw = [];
+    var seen = new Set();
+    for (var i = 0; i + SEED <= tokA.length; i++) {
+      var k = tokA[i].norm + "\u0001" + tokA[i + 1].norm + "\u0001" + tokA[i + 2].norm;
+      var hits = index.get(k);
+      if (!hits) continue;
+      for (var h = 0; h < hits.length; h++) {
+        var b = hits[h];
+        // extend left
+        var ai = i, bj = b;
+        while (ai > 0 && bj > 0 && tokA[ai - 1].norm === tokB[bj - 1].norm) { ai--; bj--; }
+        var id = ai + ":" + bj;
+        if (seen.has(id)) continue;
+        // extend right from the left-anchored start
+        var len = 0;
+        while (ai + len < tokA.length && bj + len < tokB.length &&
+          tokA[ai + len].norm === tokB[bj + len].norm) len++;
+        seen.add(id);
+        if (len >= minRun) raw.push({ a: ai, b: bj, len: len });
+      }
+    }
+    raw.sort(function (x, y) { return y.len - x.len || x.a - y.a; });
+    var claimed = new Uint8Array(tokA.length);
+    var spans = [];
+    for (var r = 0; r < raw.length; r++) {
+      var sp = raw[r];
+      var free = 0;
+      for (var t = sp.a; t < sp.a + sp.len; t++) if (!claimed[t]) free++;
+      if (free < Math.min(minRun, sp.len)) continue; // mostly re-reports a longer span
+      for (t = sp.a; t < sp.a + sp.len; t++) claimed[t] = 1;
+      spans.push({ aStart: sp.a, aEnd: sp.a + sp.len, bStart: sp.b, bEnd: sp.b + sp.len, length: sp.len });
+    }
+    spans.sort(function (x, y) { return x.aStart - y.aStart; });
+    return spans;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Layer 3 — sentence alignment
+   * ------------------------------------------------------------------ */
+
+  function lcsLength(a, b) {
+    var n = a.length, m = b.length;
+    if (!n || !m) return 0;
+    var prev = new Uint16Array(m + 1), cur = new Uint16Array(m + 1);
+    for (var i = 1; i <= n; i++) {
+      for (var j = 1; j <= m; j++) {
+        cur[j] = a[i - 1] === b[j - 1] ? prev[j - 1] + 1 : (prev[j] > cur[j - 1] ? prev[j] : cur[j - 1]);
+      }
+      var tmp = prev; prev = cur; cur = tmp;
+    }
+    return prev[m];
+  }
+
+  function sentenceTokens(doc, s) {
+    return doc.tokens.slice(s.tokenStart, s.tokenStart + s.tokenCount);
+  }
+  function contentStems(toks) {
+    var set = new Set();
+    for (var i = 0; i < toks.length; i++) {
+      if (!STOPWORDS.has(toks[i].norm)) set.add(toks[i].stem);
+    }
+    return set;
+  }
+  function jaccard(a, b) {
+    if (!a.size || !b.size) return { sim: 0, shared: 0 };
+    var inter = 0;
+    a.forEach(function (v) { if (b.has(v)) inter++; });
+    return { sim: inter / (a.size + b.size - inter), shared: inter };
+  }
+
+  // Score every suspect sentence against its best source sentence.
+  // Candidates come from a stem inverted index, so cost stays near-linear.
+  // Excluded tokens (quoted/references) don't participate in scoring, so a
+  // sentence that is mostly a quotation isn't flagged for its lead-in words.
+  function alignSentences(suspect, source, opts, excl) {
+    var inv = new Map();
+    var srcMeta = [];
+    for (var j = 0; j < source.sentences.length; j++) {
+      var st = sentenceTokens(source, source.sentences[j]);
+      var stems = contentStems(st);
+      srcMeta.push({ toks: st, stems: stems });
+      stems.forEach(function (s) {
+        var arr = inv.get(s);
+        if (arr) arr.push(j); else inv.set(s, [j]);
+      });
+    }
+    var results = [];
+    for (var i = 0; i < suspect.sentences.length; i++) {
+      var sent = suspect.sentences[i];
+      var toks = sentenceTokens(suspect, sent);
+      if (excl) {
+        toks = toks.filter(function (t, idx) { return !excl[sent.tokenStart + idx]; });
+      }
+      if (toks.length < 4) continue; // too short to be meaningful
+      var stems = contentStems(toks);
+      if (stems.size === 0) continue;
+      var counts = new Map();
+      stems.forEach(function (s) {
+        var arr = inv.get(s);
+        if (!arr) return;
+        for (var x = 0; x < arr.length; x++) counts.set(arr[x], (counts.get(arr[x]) || 0) + 1);
+      });
+      var cands = Array.from(counts.entries())
+        .filter(function (e) { return e[1] >= Math.max(2, stems.size * 0.34); })
+        .sort(function (a, b) { return b[1] - a[1]; })
+        .slice(0, 8);
+      var best = null;
+      for (var c = 0; c < cands.length; c++) {
+        var meta = srcMeta[cands[c][0]];
+        // LCS over stems, so inflection changes (capture/captures/captured)
+        // still count toward sequence similarity.
+        var seqA = toks.map(function (t) { return t.stem; });
+        var seqB = meta.toks.map(function (t) { return t.stem; });
+        var lcs = lcsLength(seqA, seqB);
+        var seqSim = (2 * lcs) / (seqA.length + seqB.length);
+        var jc = jaccard(stems, meta.stems);
+        var lenRatio = Math.min(toks.length, meta.toks.length) / Math.max(toks.length, meta.toks.length);
+        var score = Math.max(seqSim, jc.sim * 0.92 * Math.min(1, lenRatio + 0.35));
+        if (!best || score > best.score) {
+          best = { srcSent: cands[c][0], seqSim: seqSim, setSim: jc.sim,
+                   shared: jc.shared, contain: jc.shared / stems.size, score: score };
+        }
+      }
+      if (!best) continue;
+      var cls = null;
+      if (best.seqSim >= 0.95) cls = CLS.VERBATIM;
+      else if (best.seqSim >= 0.7 || (best.setSim >= 0.8 && best.seqSim >= 0.45)) cls = CLS.NEAR;
+      else if (best.setSim >= opts.paraphraseThreshold ||
+               // Containment path: most of this sentence's content vocabulary
+               // (with a floor on absolute count, so short sentences can't
+               // trip it) comes from one source sentence, partly in order.
+               (best.contain >= 0.6 && best.shared >= 6 && best.seqSim >= 0.3)) cls = CLS.PARAPHRASE;
+      if (cls) {
+        results.push({ suspectSent: i, srcSent: best.srcSent, cls: cls,
+          seqSim: round2(best.seqSim), setSim: round2(best.setSim) });
+      }
+    }
+    return results;
+  }
+
+  function round2(x) { return Math.round(x * 100) / 100; }
+
+  /* ------------------------------------------------------------------ *
+   * Layer 4 — winnowed fingerprints (MOSS-style)
+   * ------------------------------------------------------------------ */
+
+  function fnv1a(str) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = (h * 0x01000193) >>> 0;
+    }
+    return h;
+  }
+
+  function fingerprints(tokens, k, w) {
+    k = k || 5; w = w || 4;
+    var n = tokens.length;
+    if (n < k) return new Set();
+    var hashes = new Array(n - k + 1);
+    for (var i = 0; i + k <= n; i++) {
+      var parts = [];
+      for (var j = 0; j < k; j++) parts.push(tokens[i + j].norm);
+      hashes[i] = fnv1a(parts.join("\u0001"));
+    }
+    var fp = new Set();
+    for (i = 0; i + w <= hashes.length; i++) {
+      var min = Infinity, pos = -1;
+      for (j = i; j < i + w; j++) {
+        if (hashes[j] <= min) { min = hashes[j]; pos = j; }
+      }
+      fp.add(min);
+    }
+    if (hashes.length < w) for (i = 0; i < hashes.length; i++) fp.add(hashes[i]);
+    return fp;
+  }
+
+  function containment(fpA, fpB) {
+    if (!fpA.size) return 0;
+    var inter = 0;
+    fpA.forEach(function (h) { if (fpB.has(h)) inter++; });
+    return inter / fpA.size;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Document comparison + multi-source analysis
+   * ------------------------------------------------------------------ */
+
+  var DEFAULT_OPTS = {
+    minRun: 5,               // shortest verbatim run reported, in words
+    ignoreQuotes: true,      // exclude quoted passages from the score
+    ignoreReferences: true,  // exclude a trailing references section
+    paraphraseThreshold: 0.55
+  };
+
+  function withDefaults(opts) {
+    var o = {};
+    for (var k in DEFAULT_OPTS) o[k] = DEFAULT_OPTS[k];
+    for (k in (opts || {})) if (opts[k] !== undefined) o[k] = opts[k];
+    return o;
+  }
+
+  // Compare one suspect doc against one source doc. `excl` is the suspect's
+  // exclusion array (quoted/refs), shared across sources.
+  function compareDocs(suspect, source, opts, excl) {
+    var spans = findVerbatimSpans(suspect.tokens, source.tokens, opts.minRun);
+    var cls = new Uint8Array(suspect.tokens.length);
+    for (var s = 0; s < spans.length; s++) {
+      for (var t = spans[s].aStart; t < spans[s].aEnd; t++) cls[t] = CLS.VERBATIM;
+    }
+    var sentPairs = alignSentences(suspect, source, opts, excl);
+    for (var p = 0; p < sentPairs.length; p++) {
+      var sent = suspect.sentences[sentPairs[p].suspectSent];
+      for (t = sent.tokenStart; t < sent.tokenStart + sent.tokenCount; t++) {
+        if (cls[t] < sentPairs[p].cls) cls[t] = sentPairs[p].cls;
+      }
+    }
+    var flagged = 0, verb = 0, near = 0, para = 0, denom = 0;
+    for (t = 0; t < cls.length; t++) {
+      if (excl && excl[t]) continue;
+      denom++;
+      if (cls[t] === CLS.VERBATIM) { verb++; flagged++; }
+      else if (cls[t] === CLS.NEAR) { near++; flagged++; }
+      else if (cls[t] === CLS.PARAPHRASE) { para++; flagged++; }
+    }
+    var fpS = fingerprints(suspect.tokens);
+    var fpB = fingerprints(source.tokens);
+    return {
+      spans: spans,
+      sentencePairs: sentPairs,
+      classByToken: cls,
+      containment: round2(containment(fpS, fpB)),
+      similarity: denom ? flagged / denom : 0,
+      breakdown: { verbatim: verb, near: near, paraphrase: para, denom: denom }
+    };
+  }
+
+  // Analyze `suspectText` against a list of sources [{id, title, text}].
+  // Returns everything the report needs, offsets included.
+  function analyze(suspectText, sources, opts) {
+    opts = withDefaults(opts);
+    var suspect = tokenize(suspectText);
+    var excl = new Uint8Array(suspect.tokens.length);
+    if (opts.ignoreReferences) markReferences(suspect, excl);
+    if (opts.ignoreQuotes) markQuoted(suspect, excl);
+
+    var perSource = [];
+    var overall = new Uint8Array(suspect.tokens.length);
+    var attribution = new Int16Array(suspect.tokens.length).fill(-1);
+
+    for (var i = 0; i < sources.length; i++) {
+      var srcDoc = tokenize(sources[i].text);
+      var r = compareDocs(suspect, srcDoc, opts, excl);
+      for (var t = 0; t < overall.length; t++) {
+        if (r.classByToken[t] > overall[t]) {
+          overall[t] = r.classByToken[t];
+          attribution[t] = i;
+        }
+      }
+      perSource.push({
+        id: sources[i].id,
+        title: sources[i].title,
+        similarity: round4(r.similarity),
+        containment: r.containment,
+        breakdown: r.breakdown,
+        spans: r.spans.map(function (sp) {
+          return {
+            length: sp.length,
+            suspect: tokenRangeToChars(suspect, sp.aStart, sp.aEnd),
+            source: tokenRangeToChars(srcDoc, sp.bStart, sp.bEnd),
+            sourceText: srcDoc.text.slice(
+              srcDoc.tokens[sp.bStart].start, srcDoc.tokens[sp.bEnd - 1].end)
+          };
+        }),
+        sentencePairs: r.sentencePairs.map(function (pr) {
+          var ss = suspect.sentences[pr.suspectSent];
+          var bs = srcDoc.sentences[pr.srcSent];
+          return {
+            cls: pr.cls, seqSim: pr.seqSim, setSim: pr.setSim,
+            suspect: { start: ss.start, end: ss.end },
+            source: { start: bs.start, end: bs.end },
+            sourceText: srcDoc.text.slice(bs.start, bs.end)
+          };
+        })
+      });
+    }
+
+    var counts = { verbatim: 0, near: 0, paraphrase: 0, quoted: 0, refs: 0, clear: 0 };
+    var denom = 0;
+    for (t = 0; t < overall.length; t++) {
+      if (excl[t] === CLS.QUOTED) { counts.quoted++; continue; }
+      if (excl[t] === CLS.REFS) { counts.refs++; continue; }
+      denom++;
+      if (overall[t] === CLS.VERBATIM) counts.verbatim++;
+      else if (overall[t] === CLS.NEAR) counts.near++;
+      else if (overall[t] === CLS.PARAPHRASE) counts.paraphrase++;
+      else counts.clear++;
+    }
+    var flagged = counts.verbatim + counts.near + counts.paraphrase;
+    perSource.sort(function (a, b) { return b.similarity - a.similarity; });
+
+    return {
+      opts: opts,
+      tokens: suspect.tokens.length,
+      sentences: suspect.sentences.length,
+      words: denom,
+      counts: counts,
+      similarityIndex: denom ? round4(flagged / denom) : 0,
+      verdict: verdictFor(denom ? flagged / denom : 0),
+      perSource: perSource,
+      // for rendering highlights over the suspect text:
+      tokenMeta: suspect.tokens.map(function (tok, idx) {
+        return { start: tok.start, end: tok.end,
+          cls: excl[idx] || overall[idx], src: attribution[idx] };
+      }),
+      sentenceMap: suspect.sentences.map(function (s) {
+        var worst = 0;
+        for (var t2 = s.tokenStart; t2 < s.tokenStart + s.tokenCount; t2++) {
+          var c = excl[t2] ? 0 : overall[t2];
+          if (c > worst) worst = c;
+        }
+        return { start: s.start, end: s.end, cls: worst };
+      })
+    };
+  }
+
+  function tokenRangeToChars(doc, a, b) {
+    return { start: doc.tokens[a].start, end: doc.tokens[b - 1].end };
+  }
+  function round4(x) { return Math.round(x * 10000) / 10000; }
+
+  function verdictFor(ratio) {
+    var pct = ratio * 100;
+    if (pct < 10) return { level: "low", label: "Low overlap" };
+    if (pct < 25) return { level: "moderate", label: "Notable overlap" };
+    if (pct < 50) return { level: "high", label: "Substantial overlap" };
+    return { level: "severe", label: "Extensive overlap" };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Cross-compare (every pair in a set — collusion / reuse screening)
+   * ------------------------------------------------------------------ */
+
+  function crossCompare(docs, opts) {
+    opts = withDefaults(opts);
+    var parsed = docs.map(function (d) { return tokenize(d.text); });
+    var excls = parsed.map(function (p) { return new Uint8Array(p.tokens.length); });
+    if (opts.ignoreQuotes || opts.ignoreReferences) {
+      for (var i = 0; i < parsed.length; i++) {
+        if (opts.ignoreReferences) markReferences(parsed[i], excls[i]);
+        if (opts.ignoreQuotes) markQuoted(parsed[i], excls[i]);
+      }
+    }
+    var n = docs.length;
+    var cells = [];
+    for (i = 0; i < n; i++) {
+      for (var j = i + 1; j < n; j++) {
+        var ab = compareDocs(parsed[i], parsed[j], opts, excls[i]);
+        var ba = compareDocs(parsed[j], parsed[i], opts, excls[j]);
+        cells.push({
+          a: i, b: j,
+          simAB: round4(ab.similarity), simBA: round4(ba.similarity),
+          max: round4(Math.max(ab.similarity, ba.similarity))
+        });
+      }
+    }
+    return { docs: docs.map(function (d) { return { id: d.id, title: d.title }; }), cells: cells };
+  }
+
+  return {
+    tokenize: tokenize,
+    normToken: normToken,
+    stem: stem,
+    findVerbatimSpans: findVerbatimSpans,
+    alignSentences: alignSentences,
+    fingerprints: fingerprints,
+    containment: containment,
+    analyze: analyze,
+    crossCompare: crossCompare,
+    CLS: CLS,
+    DEFAULT_OPTS: DEFAULT_OPTS
+  };
+});
+
+</script>
+<script>
+/* Aleris Originality — application layer.
+ * Wires the engine to the UI: library storage, team sync, file import,
+ * incremental analysis with progress, report rendering and exports.
+ * Everything runs client-side; documents leave the page only when the user
+ * saves the team library or exports a file. */
+(function () {
+  "use strict";
+  var E = window.AlerisEngine;
+
+  /* ---------------- tiny helpers ---------------- */
+  function $(sel) { return document.querySelector(sel); }
+  function el(tag, attrs, html) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === "class") n.className = attrs[k];
+      else if (k === "text") n.textContent = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    }
+    if (html !== undefined) n.innerHTML = html;
+    return n;
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function pct(x, dp) {
+    var v = x * 100;
+    return v.toFixed(dp !== undefined ? dp : (v > 0 && v < 10 ? 1 : 0));
+  }
+  function fmtInt(n) { return n.toLocaleString("en-US"); }
+  function yieldUI() { return new Promise(function (r) { setTimeout(r, 0); }); }
+  function uid() { return "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+  var toastTimer = null;
+  function toast(msg, ms) {
+    var t = $(".toast");
+    if (t) t.remove();
+    t = el("div", { class: "toast", role: "status" });
+    t.textContent = msg;
+    document.body.appendChild(t);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.remove(); }, ms || 3400);
+  }
+
+  /* ---------------- state + persistence ---------------- */
+  var LIB_KEY = "alerisOriginality.lib.v1";
+  var OPT_KEY = "alerisOriginality.opts.v1";
+  var state = {
+    library: [],            // {id,title,author,text,words,updatedAt,origin:'local'|'team'}
+    mode: "library",        // 'library' | 'adhoc'
+    lastReport: null,
+    team: { ns: null, downloads: null, fetched: false, teamCount: 0,
+            teamSavedAt: null, readOnly: false, unavailable: false }
+  };
+
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(LIB_KEY);
+      if (raw) state.library = JSON.parse(raw).docs || [];
+    } catch (e) { /* private mode / blocked storage — run stateless */ }
+    try {
+      var o = localStorage.getItem(OPT_KEY);
+      if (o) {
+        o = JSON.parse(o);
+        if (o.minRun) $("#opt-minrun").value = String(o.minRun);
+        $("#opt-quotes").checked = o.ignoreQuotes !== false;
+        $("#opt-refs").checked = o.ignoreReferences !== false;
+      }
+    } catch (e) { }
+  }
+  function saveLocal() {
+    try {
+      localStorage.setItem(LIB_KEY, JSON.stringify({ docs: state.library }));
+    } catch (e) {
+      toast("Library is too large for this browser's storage — export it as a file to keep it safe.");
+    }
+    try { localStorage.setItem(OPT_KEY, JSON.stringify(currentOpts())); } catch (e) { }
+  }
+  function currentOpts() {
+    return {
+      minRun: parseInt($("#opt-minrun").value, 10) || 5,
+      ignoreQuotes: $("#opt-quotes").checked,
+      ignoreReferences: $("#opt-refs").checked
+    };
+  }
+
+  /* ---------------- team library (artifact capability) ---------------- */
+  var TEAM_PATH = "data/library.json";
+
+  function mergeDocs(docs, origin) {
+    var byId = {};
+    state.library.forEach(function (d) { byId[d.id] = d; });
+    var added = 0, updated = 0;
+    (docs || []).forEach(function (src) {
+      var td = Object.assign({}, src);
+      td.origin = origin;
+      if (!td.id) td.id = uid();
+      if (!td.words) td.words = E.tokenize(td.text || "").tokens.length;
+      var mine = byId[td.id];
+      if (!mine) { state.library.push(td); added++; }
+      else if ((td.updatedAt || 0) > (mine.updatedAt || 0)) {
+        Object.assign(mine, td); updated++;
+      } else if (origin === "team" && mine.origin !== "team" &&
+                 mine.title === td.title && mine.text === td.text) {
+        mine.origin = "team";
+      }
+    });
+    return { added: added, updated: updated };
+  }
+
+  function bootTeam() {
+    // 1) A shared snapshot may be served next to the page (artifact data file,
+    //    or a data/library.json committed to the repo on static hosting).
+    try {
+      fetch(TEAM_PATH, { cache: "no-store" }).then(function (res) {
+        if (!res.ok) return null;
+        return res.json();
+      }).then(function (json) {
+        if (!json || !json.docs) return;
+        state.team.fetched = true;
+        state.team.teamCount = json.docs.length;
+        state.team.teamSavedAt = json.savedAt || null;
+        var r = mergeDocs(json.docs, "team");
+        if (r.added || r.updated) saveLocal();
+        renderLibrary(); renderTeamCard(); updateScopeNote();
+      }).catch(function () { });
+    } catch (e) { }
+    // 2) Saving back requires the artifact capability (claude.ai artifact views).
+    if (window.claude && typeof window.claude.use === "function") {
+      window.claude.use("artifact").then(function (ns) {
+        state.team.ns = ns;
+        renderTeamCard();
+      }).catch(function () { });
+      window.claude.use("downloads").then(function (ns) {
+        state.team.downloads = ns;
+      }).catch(function () { });
+    }
+  }
+
+  function renderTeamCard() {
+    var card = $("#team-card");
+    var t = state.team;
+    if (!t.ns && !t.fetched) { card.hidden = true; return; }
+    card.hidden = false;
+    var status;
+    if (t.fetched) {
+      status = "Shared team library loaded — " + fmtInt(t.teamCount) + " document" +
+        (t.teamCount === 1 ? "" : "s") +
+        (t.teamSavedAt ? ", saved " + new Date(t.teamSavedAt).toLocaleString() : "") + ".";
+    } else {
+      status = "No shared team library yet — save one so every teammate opens the same reference set.";
+    }
+    var html = "<h3 style='font-size:1.02rem'>Team library</h3>" +
+      "<p class='hint' style='margin:.35rem 0 .8rem'>" + esc(status) + "</p>";
+    if (t.ns && !t.readOnly && !t.unavailable) {
+      html += "<div class='row'><button class='btn btn-primary btn-sm' id='team-save'>Save current library for the team</button>" +
+        "<span class='hint'>Replaces the shared set with the " + fmtInt(state.library.length) +
+        " document" + (state.library.length === 1 ? "" : "s") + " listed below. Teammates get it when they open or reload this artifact.</span></div>";
+    } else if (t.readOnly) {
+      html += "<p class='note'>Your view of this artifact is read-only, so the shared library can't be changed from here. You can still add local documents and run checks.</p>";
+    } else if (t.unavailable) {
+      html += "<p class='note'>Saving isn't available in this view (this can happen when the artifact is shared publicly). Local documents and checks still work.</p>";
+    } else if (!t.ns) {
+      html += "<p class='hint'>This copy was loaded from a shared snapshot. To change the shared set, save from the claude.ai artifact, or commit an updated <code>data/library.json</code> to the repository.</p>";
+    }
+    card.innerHTML = html;
+    var btn = $("#team-save");
+    if (btn) btn.addEventListener("click", saveTeamLibrary);
+  }
+
+  function saveTeamLibrary() {
+    var t = state.team;
+    if (!t.ns) return;
+    var payload = {
+      app: "aleris-originality", version: 1,
+      savedAt: new Date().toISOString(),
+      docs: state.library.map(function (d) {
+        return { id: d.id, title: d.title, author: d.author || "", text: d.text,
+                 words: d.words, updatedAt: d.updatedAt };
+      })
+    };
+    var btn = $("#team-save");
+    if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
+    var files = {};
+    files[TEAM_PATH] = { content: JSON.stringify(payload), contentType: "application/json" };
+    t.ns.publish(files).then(function () {
+      state.library.forEach(function (d) { d.origin = "team"; });
+      state.team.fetched = true;
+      state.team.teamCount = payload.docs.length;
+      state.team.teamSavedAt = payload.savedAt;
+      saveLocal(); renderLibrary(); renderTeamCard();
+      toast("Team library saved — teammates see it when they open or reload the artifact.");
+    }).catch(function (err) {
+      var code = err && err.code;
+      if (code === "conflict") {
+        toast("A teammate saved first — reloading to pick up their version.");
+      } else if (code === "not_writer" || code === "not_granted") {
+        state.team.readOnly = true; renderTeamCard();
+      } else if (code === "capability_disabled" || code === "capability_removed" || code === "not_declared") {
+        state.team.unavailable = true; renderTeamCard();
+      } else if (code === "too_large") {
+        toast("The library is too large to save to the artifact — remove some documents or export to JSON instead.");
+      } else if (code === "rate_limited") {
+        toast("Saving too often — wait a moment and try again.");
+      } else {
+        toast("Couldn't save the team library (" + (code || "unknown error") + "). Try again in a moment.");
+      }
+      renderTeamCard();
+    });
+  }
+
+  /* ---------------- file import ---------------- */
+  function baseName(name) { return name.replace(/\.[^.]+$/, ""); }
+
+  function docxToText(buf) {
+    if (!window.JSZip) return Promise.reject(new Error("docx support unavailable (JSZip not loaded)"));
+    return JSZip.loadAsync(buf).then(function (zip) {
+      var f = zip.file("word/document.xml");
+      if (!f) throw new Error("not a Word document");
+      return f.async("string");
+    }).then(function (xml) {
+      return xml
+        .replace(/<w:tab[^>]*\/>/g, "\t")
+        .replace(/<w:br[^>]*\/>/g, "\n")
+        .replace(/<\/w:p>/g, "\n\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+        .replace(/&#(\d+);/g, function (m, d) { return String.fromCodePoint(+d); })
+        .replace(/&amp;/g, "&")
+        .replace(/\n{3,}/g, "\n\n").trim();
+    });
+  }
+
+  function readOneFile(file) {
+    var name = file.name || "document";
+    if (/\.docx$/i.test(name)) {
+      return file.arrayBuffer().then(docxToText).then(function (text) {
+        return { title: baseName(name), text: text };
+      });
+    }
+    if (/\.(txt|md|markdown|text)$/i.test(name) || /^text\//.test(file.type) || !file.type) {
+      return file.text().then(function (text) { return { title: baseName(name), text: text }; });
+    }
+    return Promise.reject(new Error(name + ": unsupported type — use .txt, .md or .docx (for PDFs, paste the text)"));
+  }
+
+  function wireDrop(zone, onFiles) {
+    ["dragenter", "dragover"].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) { e.preventDefault(); zone.classList.add("armed"); });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) { e.preventDefault(); zone.classList.remove("armed"); });
+    });
+    zone.addEventListener("drop", function (e) {
+      if (e.dataTransfer && e.dataTransfer.files.length) onFiles(e.dataTransfer.files);
+    });
+  }
+
+  var filePickTarget = null; // 'check' | 'adhoc' | 'library'
+  function pickFiles(target) {
+    filePickTarget = target;
+    var input = $("#file-input");
+    input.multiple = target === "library";
+    input.value = "";
+    input.click();
+  }
+  function handleFiles(target, files) {
+    var list = Array.prototype.slice.call(files);
+    if (target !== "library") list = list.slice(0, 1);
+    var jobs = list.map(function (f) {
+      return readOneFile(f).then(function (doc) { return doc; }, function (err) {
+        toast(err.message); return null;
+      });
+    });
+    Promise.all(jobs).then(function (docs) {
+      docs = docs.filter(Boolean);
+      if (!docs.length) return;
+      if (target === "check") {
+        $("#check-text").value = docs[0].text;
+        if (!$("#check-title").value) $("#check-title").value = docs[0].title;
+        toast("Loaded “" + docs[0].title + "” (" + fmtInt(E.tokenize(docs[0].text).tokens.length) + " words).");
+      } else if (target === "adhoc") {
+        $("#adhoc-text").value = docs[0].text;
+        toast("Loaded reference text from “" + docs[0].title + "”.");
+      } else {
+        var added = 0;
+        docs.forEach(function (d) {
+          if (!d.text.trim()) return;
+          addDoc(d.title, "", d.text); added++;
+        });
+        if (added) toast("Added " + added + " document" + (added === 1 ? "" : "s") + " to the library.");
+      }
+    });
+  }
+
+  /* ---------------- library ---------------- */
+  function addDoc(title, author, text) {
+    var doc = {
+      id: uid(),
+      title: (title || "Untitled").trim() || "Untitled",
+      author: (author || "").trim(),
+      text: text,
+      words: E.tokenize(text).tokens.length,
+      updatedAt: Date.now(),
+      origin: "local"
+    };
+    state.library.push(doc);
+    saveLocal(); renderLibrary(); updateScopeNote();
+    return doc;
+  }
+
+  function renderLibrary() {
+    var wrap = $("#lib-list");
+    $("#lib-count").textContent = state.library.length ? "(" + state.library.length + ")" : "";
+    if (!state.library.length) {
+      wrap.innerHTML = "<div class='card empty'><div class='big'>No reference documents yet</div>" +
+        "Import your team's past work above — every check screens against what lives here.</div>";
+      return;
+    }
+    wrap.innerHTML = "";
+    var grid = el("div", { class: "lib-grid" });
+    state.library.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; })
+      .forEach(function (d) {
+        var card = el("article", { class: "card lib-card" });
+        card.innerHTML =
+          "<div class='row spread'><span class='badge " + (d.origin === "team" ? "badge-team'>Team" : "badge-local'>Local only") + "</span></div>" +
+          "<div class='t'>" + esc(d.title) + "</div>" +
+          (d.author ? "<div class='hint'>" + esc(d.author) + "</div>" : "") +
+          "<div class='meta'>" + fmtInt(d.words) + " words · " + new Date(d.updatedAt).toLocaleDateString() + "</div>" +
+          "<details><summary class='hint' style='cursor:pointer'>Preview</summary>" +
+          "<div class='doc-text' style='max-height:200px;font-size:.85rem'>" + esc(d.text.slice(0, 1200)) + (d.text.length > 1200 ? "…" : "") + "</div></details>" +
+          "<div class='row'><button class='btn btn-sm' data-act='check'>Check against this</button>" +
+          "<button class='btn btn-sm btn-danger' data-act='del'>Remove</button></div>";
+        card.querySelector("[data-act='del']").addEventListener("click", function () {
+          var inTeam = d.origin === "team";
+          if (!confirm("Remove “" + d.title + "” from the library?" +
+            (inTeam ? "\n\nIt stays in the shared team library until someone saves the team library again." : ""))) return;
+          state.library = state.library.filter(function (x) { return x.id !== d.id; });
+          saveLocal(); renderLibrary(); updateScopeNote();
+        });
+        card.querySelector("[data-act='check']").addEventListener("click", function () {
+          setMode("adhoc");
+          $("#adhoc-text").value = d.text;
+          switchView("check");
+          toast("Reference text set to “" + d.title + "” — paste the document to check and run.");
+        });
+        grid.appendChild(card);
+      });
+    wrap.appendChild(grid);
+  }
+
+  function exportLibrary() {
+    var payload = JSON.stringify({
+      app: "aleris-originality", version: 1,
+      savedAt: new Date().toISOString(), docs: state.library
+    }, null, 2);
+    deliverFile("aleris-library.json", payload, "application/json");
+  }
+  function importLibraryFile(file) {
+    file.text().then(function (raw) {
+      var json = JSON.parse(raw);
+      if (!json || !Array.isArray(json.docs)) throw new Error("bad file");
+      var r = mergeDocs(json.docs, "local");
+      saveLocal(); renderLibrary(); updateScopeNote();
+      toast("Imported " + r.added + " new, updated " + r.updated + " existing document" + ((r.added + r.updated) === 1 ? "" : "s") + ".");
+    }).catch(function () {
+      toast("That file isn't an Aleris library export.");
+    });
+  }
+
+  /* ---------------- file delivery (downloads capability or <a download>) -- */
+  function deliverFile(filename, data, mime) {
+    if (state.team.downloads) {
+      state.team.downloads.save({ filename: filename, data: data }).then(function () {
+        toast("Saved " + filename + ".");
+      }).catch(function (err) {
+        if (err && err.code === "declined") return;
+        copyFallback(filename, data);
+      });
+      return;
+    }
+    if (window.claude && typeof window.claude.use === "function") {
+      // Sandboxed artifact view without the downloads capability: anchor
+      // downloads are inert here, so hand the content over via clipboard.
+      copyFallback(filename, data);
+      return;
+    }
+    try {
+      var blob = new Blob([data], { type: mime || "text/plain" });
+      var url = URL.createObjectURL(blob);
+      var a = el("a", { href: url, download: filename });
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 400);
+      toast("Downloading " + filename + "…");
+    } catch (e) { copyFallback(filename, data); }
+  }
+  function copyFallback(filename, data) {
+    navigator.clipboard.writeText(data).then(function () {
+      toast("Couldn't save the file here — its contents were copied to your clipboard instead.");
+    }, function () { toast("Couldn't save or copy " + filename + " in this view."); });
+  }
+
+  /* ---------------- check flow ---------------- */
+  function setMode(mode) {
+    state.mode = mode;
+    $("#mode-library").setAttribute("aria-pressed", String(mode === "library"));
+    $("#mode-adhoc").setAttribute("aria-pressed", String(mode === "adhoc"));
+    $("#adhoc-wrap").hidden = mode !== "adhoc";
+    updateScopeNote();
+  }
+  function updateScopeNote() {
+    var n = $("#scope-note");
+    if (state.mode === "library") {
+      n.textContent = state.library.length
+        ? "Screens against all " + state.library.length + " library document" + (state.library.length === 1 ? "" : "s")
+        : "Library is empty — add documents or compare against pasted text";
+    } else {
+      n.textContent = "Compares the document against the pasted reference text only";
+    }
+    var cs = $("#cross-scope");
+    if (cs) cs.textContent = state.library.length < 2
+      ? "Needs at least two library documents"
+      : state.library.length + " documents · " + (state.library.length * (state.library.length - 1) / 2) + " pairs";
+  }
+
+  function gatherSources() {
+    if (state.mode === "adhoc") {
+      var t = $("#adhoc-text").value;
+      if (!t.trim()) return { error: "Paste the reference text to compare against (or switch to library mode)." };
+      return { sources: [{ id: "adhoc", title: "Pasted reference text", text: t }] };
+    }
+    if (!state.library.length) return { error: "The library is empty — add reference documents first, or compare against pasted text." };
+    return { sources: state.library.map(function (d) { return { id: d.id, title: d.title, text: d.text }; }) };
+  }
+
+  // Incremental multi-source analysis: one engine pass per source with UI
+  // yields in between, merged exactly as the engine would merge them.
+  function analyzeIncremental(text, sources, opts, onProgress) {
+    var suspect = E.tokenize(text);
+    var merged = null, perSource = [];
+    var chain = Promise.resolve();
+    sources.forEach(function (src, i) {
+      chain = chain.then(function () {
+        onProgress(i, sources.length, src.title);
+        return yieldUI();
+      }).then(function () {
+        var r = E.analyze(text, [src], opts);
+        if (!merged) {
+          // keep only the exclusion classes; match classes are re-applied
+          // below for every source (the first one included) with attribution
+          merged = r.tokenMeta.map(function (m) {
+            return { start: m.start, end: m.end,
+                     cls: (m.cls === 4 || m.cls === 5) ? m.cls : 0, src: -1 };
+          });
+        }
+        r.tokenMeta.forEach(function (m, t) {
+          if (m.cls >= 1 && m.cls <= 3 && m.cls > merged[t].cls) {
+            merged[t].cls = m.cls; merged[t].src = i;
+          }
+        });
+        r.perSource[0].srcIndex = i;
+        perSource.push(r.perSource[0]);
+        return null;
+      });
+    });
+    return chain.then(function () {
+      var counts = { verbatim: 0, near: 0, paraphrase: 0, quoted: 0, refs: 0, clear: 0 };
+      var denom = 0;
+      merged.forEach(function (m) {
+        if (m.cls === 4) { counts.quoted++; return; }
+        if (m.cls === 5) { counts.refs++; return; }
+        denom++;
+        if (m.cls === 3) counts.verbatim++;
+        else if (m.cls === 2) counts.near++;
+        else if (m.cls === 1) counts.paraphrase++;
+        else counts.clear++;
+      });
+      var flagged = counts.verbatim + counts.near + counts.paraphrase;
+      var ratio = denom ? flagged / denom : 0;
+      perSource.sort(function (a, b) { return b.similarity - a.similarity; });
+      var sentenceMap = suspect.sentences.map(function (s) {
+        var worst = 0;
+        for (var t = s.tokenStart; t < s.tokenStart + s.tokenCount; t++) {
+          var c = merged[t].cls;
+          if (c >= 1 && c <= 3 && c > worst) worst = c;
+        }
+        return { start: s.start, end: s.end, cls: worst };
+      });
+      return {
+        text: text, opts: opts, counts: counts, words: denom,
+        similarityIndex: ratio,
+        verdict: verdictFor(ratio),
+        perSource: perSource, tokenMeta: merged, sentenceMap: sentenceMap
+      };
+    });
+  }
+  function verdictFor(ratio) {
+    var p = ratio * 100;
+    if (p < 10) return { level: "low", label: "Low overlap" };
+    if (p < 25) return { level: "moderate", label: "Notable overlap" };
+    if (p < 50) return { level: "high", label: "Substantial overlap" };
+    return { level: "severe", label: "Extensive overlap" };
+  }
+
+  function runCheck() {
+    var text = $("#check-text").value;
+    if (!text.trim()) { toast("Paste or import the document to check first."); return; }
+    var g = gatherSources();
+    if (g.error) { toast(g.error); return; }
+    var opts = currentOpts();
+    saveLocal();
+    var btn = $("#run-check"), status = $("#check-status"), prog = $("#check-progress");
+    btn.disabled = true; prog.hidden = false;
+    var t0 = Date.now();
+    analyzeIncremental(text, g.sources, opts, function (i, n, title) {
+      status.textContent = "Comparing against “" + title + "” (" + (i + 1) + "/" + n + ")…";
+      prog.firstElementChild.style.width = ((i / n) * 100) + "%";
+    }).then(function (report) {
+      report.title = $("#check-title").value.trim() || "Untitled document";
+      report.sources = g.sources;
+      report.ranAt = new Date();
+      state.lastReport = report;
+      prog.firstElementChild.style.width = "100%";
+      status.textContent = "Done in " + ((Date.now() - t0) / 1000).toFixed(1) + "s.";
+      renderReport(report);
+    }).catch(function (err) {
+      status.textContent = "";
+      toast("Analysis failed: " + (err && err.message || err));
+    }).then(function () {
+      btn.disabled = false;
+      setTimeout(function () { prog.hidden = true; prog.firstElementChild.style.width = "0"; }, 600);
+    });
+  }
+
+  /* ---------------- highlight rendering ---------------- */
+  var CLS_NAME = { 1: "Paraphrase-like", 2: "Edited match", 3: "Verbatim", 4: "Quoted (excluded)", 5: "References (excluded)" };
+
+  // Merge per-token classes into contiguous runs (same cls+src), covering the
+  // text between tokens of a run so highlights read as passages, not words.
+  function tokenRuns(tokenMeta) {
+    var runs = [];
+    var cur = null;
+    tokenMeta.forEach(function (m) {
+      if (!m.cls) { cur = null; return; }
+      if (cur && cur.cls === m.cls && cur.src === m.src && m.start - cur.end <= 3) {
+        cur.end = m.end;
+      } else {
+        cur = { start: m.start, end: m.end, cls: m.cls, src: m.src };
+        runs.push(cur);
+      }
+    });
+    return runs;
+  }
+
+  // ranges: [{start,end,cls,src,jump,title}] possibly overlapping → HTML.
+  function highlightHTML(text, ranges) {
+    var points = new Set([0, text.length]);
+    ranges.forEach(function (r) { points.add(Math.max(0, r.start)); points.add(Math.min(text.length, r.end)); });
+    var cuts = Array.from(points).sort(function (a, b) { return a - b; });
+    var out = "";
+    for (var i = 0; i < cuts.length - 1; i++) {
+      var s = cuts[i], e = cuts[i + 1];
+      if (s >= e) continue;
+      var best = null;
+      for (var j = 0; j < ranges.length; j++) {
+        var r = ranges[j];
+        if (r.start <= s && r.end >= e) {
+          if (!best || priority(r.cls) > priority(best.cls)) best = r;
+        }
+      }
+      var chunk = esc(text.slice(s, e));
+      if (best) {
+        out += "<mark class='m" + best.cls + "'" +
+          (best.jump ? " data-jump='" + best.jump + "' tabindex='0' role='button'" : "") +
+          (best.id ? " id='" + best.id + "'" : "") +
+          (best.title ? " title='" + esc(best.title) + "'" : "") + ">" + chunk + "</mark>";
+      } else out += chunk;
+    }
+    return out;
+  }
+  function priority(cls) { return cls === 3 ? 5 : cls === 2 ? 4 : cls === 1 ? 3 : cls === 4 ? 2 : 1; }
+
+  function wireJumps(container) {
+    container.addEventListener("click", function (e) {
+      var m = e.target.closest("mark[data-jump]");
+      if (!m) return;
+      var target = container.querySelector("#" + CSS.escape(m.getAttribute("data-jump")));
+      if (!target) return;
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+      target.classList.add("flash");
+      setTimeout(function () { target.classList.remove("flash"); }, 1600);
+    });
+    container.addEventListener("keydown", function (e) {
+      if ((e.key === "Enter" || e.key === " ") && e.target.matches("mark[data-jump]")) {
+        e.preventDefault(); e.target.click();
+      }
+    });
+  }
+
+  /* ---------------- report rendering ---------------- */
+  function legendHTML(withQuoted) {
+    return "<div class='legend'>" +
+      "<span class='key'><span class='swatch' style='background:var(--c-verbatim)'></span>Verbatim (solid underline)</span>" +
+      "<span class='key'><span class='swatch' style='background:var(--c-near)'></span>Edited match (dashed)</span>" +
+      "<span class='key'><span class='swatch' style='background:var(--c-para)'></span>Paraphrase-like (dotted)</span>" +
+      (withQuoted ? "<span class='key'><span class='swatch' style='background:var(--c-quoted)'></span>Excluded (quotes/references)</span>" : "") +
+      "</div>";
+  }
+
+  function renderReport(rep) {
+    var wrap = $("#report");
+    wrap.hidden = false;
+    wrap.innerHTML = "";
+    var total = rep.words + rep.counts.quoted + rep.counts.refs;
+    var excluded = rep.counts.quoted + rep.counts.refs;
+
+    /* verdict band */
+    var band = el("div", { class: "card" });
+    var flaggedPct = pct(rep.similarityIndex, rep.similarityIndex * 100 >= 10 ? 0 : 1);
+    band.innerHTML =
+      "<div class='verdict-band'>" +
+      "<div><div class='hero-score'><span class='num'>" + flaggedPct + "</span><span class='pct'>%</span></div>" +
+      "<span class='verdict-label verdict-" + rep.verdict.level + "'>" + rep.verdict.label + "</span>" +
+      "<div class='verdict-meta'>of “" + esc(rep.title) + "” matches your reference set</div></div>" +
+      "<div><div class='hint' style='margin-bottom:.2rem'>Composition of " + fmtInt(total) + " words</div>" +
+      compBarHTML(rep, total) + legendHTML(excluded > 0) +
+      "<div class='stat-tiles'>" +
+      tile(fmtInt(rep.counts.verbatim), "Verbatim words") +
+      tile(fmtInt(rep.counts.near), "Edited match") +
+      tile(fmtInt(rep.counts.paraphrase), "Paraphrase-like") +
+      (excluded ? tile(fmtInt(excluded), "Excluded (quotes/refs)") : "") +
+      tile(String(rep.perSource.filter(function (s) { return s.similarity >= 0.005 || s.spans.length; }).length) + "/" + rep.perSource.length, "Sources with matches") +
+      tile(pct(rep.perSource.reduce(function (m, s) { return Math.max(m, s.containment); }, 0)) + "%", "Top fingerprint match") +
+      "</div></div></div>" +
+      "<div class='hint' style='margin-top:1rem'>Sentence map — each cell is a sentence, colored by its strongest match. Click to jump.</div>" +
+      "<div class='sent-map' id='sent-map'></div>";
+    wrap.appendChild(band);
+
+    var map = band.querySelector("#sent-map");
+    var buckets = bucketSentences(rep.sentenceMap, 200);
+    buckets.forEach(function (b) {
+      var cell = el("i", { class: b.cls ? "c" + b.cls : "", title: "Sentences " + b.label + (b.cls ? " — " + CLS_NAME[b.cls] : " — clear") });
+      cell.addEventListener("click", function () {
+        var panel = $("#overview-text");
+        if (!panel) return;
+        var target = findMarkAt(panel, b.start);
+        (target || panel).scrollIntoView({ block: "center", behavior: "smooth" });
+        if (target) { target.classList.add("flash"); setTimeout(function () { target.classList.remove("flash"); }, 1600); }
+      });
+      map.appendChild(cell);
+    });
+
+    /* full-document overview with combined highlights */
+    var over = el("div", { class: "card" });
+    over.innerHTML = "<div class='row spread'><h3 style='font-size:1.02rem'>Document with all matches</h3>" +
+      "<div class='row no-print'>" +
+      "<button class='btn btn-sm' id='exp-copy'>Copy summary</button>" +
+      "<button class='btn btn-sm' id='exp-html'>Save report</button>" +
+      "<button class='btn btn-sm' id='exp-print'>Print</button></div></div>" +
+      "<div class='panel' style='margin-top:.8rem'><div class='doc-text' id='overview-text'>" +
+      highlightHTML(rep.text, tokenRuns(rep.tokenMeta).map(function (r) {
+        var srcTitle = r.src >= 0 && rep.sources[r.src] ? rep.sources[r.src].title : "";
+        return { start: r.start, end: r.end, cls: r.cls,
+                 title: CLS_NAME[r.cls] + (srcTitle ? " — " + srcTitle : "") };
+      })) + "</div></div>";
+    wrap.appendChild(over);
+    $("#exp-copy").addEventListener("click", function () {
+      navigator.clipboard.writeText(summaryMarkdown(rep)).then(function () {
+        toast("Summary copied as Markdown.");
+      }, function () { toast("Couldn't reach the clipboard in this view."); });
+    });
+    $("#exp-html").addEventListener("click", function () {
+      deliverFile(slug(rep.title) + "-originality-report.html", exportReportHTML(rep), "text/html");
+    });
+    $("#exp-print").addEventListener("click", function () { try { window.print(); } catch (e) { toast("Printing isn't available in this view — use Save report instead."); } });
+
+    /* per-source details */
+    var srcCard = el("div", { class: "card" });
+    srcCard.innerHTML = "<h3 style='font-size:1.02rem;margin-bottom:.4rem'>Match by source</h3>";
+    rep.perSource.forEach(function (s) {
+      var d = el("details", { class: "src-detail" });
+      var simPct = pct(s.similarity);
+      d.innerHTML = "<summary><div class='src-row'>" +
+        "<div class='t'>" + esc(s.title) +
+        "<div class='sub'>" + s.spans.length + " verbatim passage" + (s.spans.length === 1 ? "" : "s") +
+        " · " + s.sentencePairs.length + " matched sentence" + (s.sentencePairs.length === 1 ? "" : "s") +
+        " · fingerprint " + pct(s.containment) + "%</div></div>" +
+        "<div class='mini-bar'><div style='width:" + Math.min(100, s.similarity * 100) + "%'></div></div>" +
+        "<div class='pct'>" + simPct + "%</div>" +
+        "<span class='hint no-print'>details ▾</span>" +
+        "</div></summary>";
+      var body = el("div", { class: "detail-body" });
+      d.appendChild(body);
+      var built = false;
+      d.addEventListener("toggle", function () {
+        if (d.open && !built) { built = true; body.innerHTML = duoHTML(rep, s); }
+      });
+      srcCard.appendChild(d);
+    });
+    wrap.appendChild(srcCard);
+    wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function tile(v, k) { return "<div class='tile'><div class='v'>" + v + "</div><div class='k'>" + k + "</div></div>"; }
+  function compBarHTML(rep, total) {
+    var c = rep.counts;
+    function seg(n, cls, label) {
+      if (!n) return "";
+      return "<span class='seg-" + cls + "' style='width:" + (n / total * 100) + "%' title='" + label + ": " + fmtInt(n) + " words'></span>";
+    }
+    return "<div class='comp-bar' role='img' aria-label='Verbatim " + c.verbatim + ", edited " + c.near + ", paraphrase " + c.paraphrase + ", excluded " + (c.quoted + c.refs) + ", clear " + c.clear + " words'>" +
+      seg(c.verbatim, "verbatim", "Verbatim") + seg(c.near, "near", "Edited match") +
+      seg(c.paraphrase, "para", "Paraphrase-like") + seg(c.quoted + c.refs, "quoted", "Excluded") +
+      seg(c.clear, "clear", "No match") + "</div>";
+  }
+  function bucketSentences(map, maxCells) {
+    if (map.length <= maxCells) {
+      return map.map(function (s, i) { return { start: s.start, cls: s.cls, label: String(i + 1) }; });
+    }
+    var per = Math.ceil(map.length / maxCells);
+    var out = [];
+    for (var i = 0; i < map.length; i += per) {
+      var chunk = map.slice(i, i + per);
+      out.push({
+        start: chunk[0].start,
+        cls: Math.max.apply(null, chunk.map(function (s) { return s.cls; })),
+        label: (i + 1) + "–" + Math.min(map.length, i + per)
+      });
+    }
+    return out;
+  }
+  function findMarkAt(panel, charStart) {
+    // The overview panel's text nodes correspond linearly to rep.text; walk
+    // marks and use their accumulated position via data — simpler: nearest mark
+    // by document order fraction. Practical approach: pick the mark whose text
+    // occurs at/after the sentence start using a running offset walk.
+    var walker = document.createTreeWalker(panel, NodeFilter.SHOW_TEXT);
+    var off = 0, node;
+    while ((node = walker.nextNode())) {
+      var len = node.textContent.length;
+      if (off + len > charStart) {
+        return node.parentElement.closest("mark") || nextMark(node);
+      }
+      off += len;
+    }
+    return null;
+  }
+  function nextMark(node) {
+    var el2 = node.parentElement;
+    var marks = el2 && el2.closest(".doc-text") ? el2.closest(".doc-text").querySelectorAll("mark") : [];
+    for (var i = 0; i < marks.length; i++) {
+      if (node.compareDocumentPosition(marks[i]) & Node.DOCUMENT_POSITION_FOLLOWING) return marks[i];
+    }
+    return null;
+  }
+
+  // Side-by-side: suspect (this source's matches only) vs the source document.
+  function duoHTML(rep, s) {
+    var srcDoc = null;
+    for (var i = 0; i < rep.sources.length; i++) {
+      if (rep.sources[i].id === s.id) { srcDoc = rep.sources[i]; break; }
+    }
+    var left = [], right = [];
+    s.spans.forEach(function (sp, idx) {
+      var jl = "L" + s.srcIndex + "x" + idx, jr = "R" + s.srcIndex + "x" + idx;
+      left.push({ start: sp.suspect.start, end: sp.suspect.end, cls: 3, id: jl, jump: jr, title: "Verbatim, " + sp.length + " words — click to see it in the source" });
+      right.push({ start: sp.source.start, end: sp.source.end, cls: 3, id: jr, jump: jl, title: "Verbatim, " + sp.length + " words — click to jump back" });
+    });
+    s.sentencePairs.forEach(function (pr, idx) {
+      var jl = "Ls" + s.srcIndex + "x" + idx, jr = "Rs" + s.srcIndex + "x" + idx;
+      var t = CLS_NAME[pr.cls] + " (sequence " + Math.round(pr.seqSim * 100) + "%, wording " + Math.round(pr.setSim * 100) + "%)";
+      left.push({ start: pr.suspect.start, end: pr.suspect.end, cls: pr.cls, id: jl, jump: jr, title: t + " — click to see the source sentence" });
+      right.push({ start: pr.source.start, end: pr.source.end, cls: pr.cls, id: jr, jump: jl, title: t });
+    });
+    return "<div class='duo'>" +
+      "<div class='panel'><h4>Checked: " + esc(rep.title) + "</h4><div class='doc-text'>" + highlightHTML(rep.text, left) + "</div></div>" +
+      "<div class='panel'><h4>Source: " + esc(s.title) + "</h4><div class='doc-text'>" + (srcDoc ? highlightHTML(srcDoc.text, right) : "<em>source text unavailable</em>") + "</div></div>" +
+      "</div>";
+  }
+
+  /* ---------------- exports ---------------- */
+  function slug(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "document"; }
+  function summaryMarkdown(rep) {
+    var lines = [
+      "# Originality report — " + rep.title,
+      "",
+      "- **Checked:** " + rep.ranAt.toLocaleString() + " · " + fmtInt(rep.words) + " words scored",
+      "- **Similarity index:** " + pct(rep.similarityIndex) + "% (" + rep.verdict.label + ")",
+      "- **Verbatim:** " + fmtInt(rep.counts.verbatim) + " words · **Edited:** " + fmtInt(rep.counts.near) + " · **Paraphrase-like:** " + fmtInt(rep.counts.paraphrase),
+      "- **Excluded:** " + fmtInt(rep.counts.quoted) + " quoted + " + fmtInt(rep.counts.refs) + " reference words",
+      "- **Settings:** min run " + rep.opts.minRun + " words, quotes " + (rep.opts.ignoreQuotes ? "excluded" : "included") + ", references " + (rep.opts.ignoreReferences ? "excluded" : "included"),
+      "",
+      "| Source | Similarity | Verbatim passages | Matched sentences | Fingerprint |",
+      "|---|---:|---:|---:|---:|"
+    ];
+    rep.perSource.forEach(function (s) {
+      lines.push("| " + s.title.replace(/\|/g, "\\|") + " | " + pct(s.similarity) + "% | " + s.spans.length + " | " + s.sentencePairs.length + " | " + pct(s.containment) + "% |");
+    });
+    lines.push("", "_Generated by Aleris Originality. Scores measure textual overlap; review the highlighted passages before drawing conclusions._");
+    return lines.join("\n");
+  }
+
+  function exportReportHTML(rep) {
+    var srcRows = rep.perSource.map(function (s) {
+      return "<tr><td>" + esc(s.title) + "</td><td class='n'>" + pct(s.similarity) + "%</td><td class='n'>" +
+        s.spans.length + "</td><td class='n'>" + s.sentencePairs.length + "</td><td class='n'>" + pct(s.containment) + "%</td></tr>";
+    }).join("");
+    var overview = highlightHTML(rep.text, tokenRuns(rep.tokenMeta).map(function (r) {
+      var srcTitle = r.src >= 0 && rep.sources[r.src] ? rep.sources[r.src].title : "";
+      return { start: r.start, end: r.end, cls: r.cls, title: CLS_NAME[r.cls] + (srcTitle ? " — " + srcTitle : "") };
+    }));
+    var duos = rep.perSource.filter(function (s) { return s.spans.length || s.sentencePairs.length; })
+      .map(function (s) { return "<h2>" + esc(s.title) + " — " + pct(s.similarity) + "%</h2>" + duoHTML(rep, s); }).join("");
+    return "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>" +
+      "<meta name='viewport' content='width=device-width, initial-scale=1'>" +
+      "<title>Originality report — " + esc(rep.title) + "</title><style>" +
+      "body{font:15px/1.6 Georgia,serif;color:#12294a;background:#fdfbf6;max-width:960px;margin:2rem auto;padding:0 1.2rem}" +
+      "h1{font-size:1.6rem}h2{font-size:1.1rem;margin-top:2rem}.meta{color:#5a6880}" +
+      "table{border-collapse:collapse;width:100%;font-size:.9rem}td,th{border:1px solid #d9cfb5;padding:.4rem .6rem;text-align:left}td.n{text-align:right;font-variant-numeric:tabular-nums}" +
+      ".doc-text{white-space:pre-wrap;border:1px solid #d9cfb5;border-radius:8px;padding:1rem;margin:.6rem 0;line-height:1.8}" +
+      ".duo{display:grid;grid-template-columns:1fr 1fr;gap:1rem}@media(max-width:800px){.duo{grid-template-columns:1fr}}" +
+      ".duo h4{margin:.2rem 0;font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#75809a}" +
+      ".panel{min-width:0}" +
+      "mark{background:none;text-decoration-line:underline;text-decoration-thickness:2px;text-underline-offset:3px;border-radius:2px;padding:.05em 0}" +
+      "mark.m3{background:rgba(179,53,43,.16);text-decoration-color:#b3352b}" +
+      "mark.m2{background:rgba(189,128,0,.17);text-decoration-color:#bd8000;text-decoration-style:dashed}" +
+      "mark.m1{background:rgba(90,73,200,.13);text-decoration-color:#5a49c8;text-decoration-style:dotted}" +
+      "mark.m4,mark.m5{background:rgba(109,118,136,.12);text-decoration-color:#6d7688;text-decoration-style:dotted;text-decoration-thickness:1px}" +
+      ".legend{font-size:.8rem;color:#4a5872}.legend b{font-weight:600}" +
+      "</style></head><body>" +
+      "<h1>Originality report — " + esc(rep.title) + "</h1>" +
+      "<p class='meta'>Checked " + rep.ranAt.toLocaleString() + " · " + fmtInt(rep.words) + " words scored · similarity index <b>" +
+      pct(rep.similarityIndex) + "%</b> (" + rep.verdict.label + ") · verbatim " + fmtInt(rep.counts.verbatim) +
+      " · edited " + fmtInt(rep.counts.near) + " · paraphrase-like " + fmtInt(rep.counts.paraphrase) +
+      " · excluded " + fmtInt(rep.counts.quoted + rep.counts.refs) + "</p>" +
+      "<p class='legend'>Highlight key: <b>solid underline</b> verbatim · <b>dashed</b> edited match · <b>dotted</b> paraphrase-like · thin dotted gray = excluded quotes/references.</p>" +
+      "<table><thead><tr><th>Source</th><th>Similarity</th><th>Verbatim passages</th><th>Matched sentences</th><th>Fingerprint</th></tr></thead><tbody>" +
+      srcRows + "</tbody></table>" +
+      "<h2>Checked document</h2><div class='doc-text'>" + overview + "</div>" +
+      duos +
+      "<p class='meta'>Generated by Aleris Originality. Scores measure textual overlap with the chosen reference set; always review highlighted passages before drawing conclusions about intent.</p>" +
+      "</body></html>";
+  }
+
+  /* ---------------- cross-compare ---------------- */
+  function runCross() {
+    if (state.library.length < 2) { toast("Add at least two library documents first."); return; }
+    var docs = state.library.map(function (d) { return { id: d.id, title: d.title, text: d.text }; });
+    var opts = currentOpts();
+    var pairs = [];
+    for (var i = 0; i < docs.length; i++) for (var j = i + 1; j < docs.length; j++) pairs.push([i, j]);
+    var btn = $("#run-cross"), prog = $("#cross-progress");
+    btn.disabled = true; prog.hidden = false;
+    var cells = [];
+    var chain = Promise.resolve();
+    pairs.forEach(function (p, idx) {
+      chain = chain.then(yieldUI).then(function () {
+        prog.firstElementChild.style.width = ((idx / pairs.length) * 100) + "%";
+        var ab = E.analyze(docs[p[0]].text, [docs[p[1]]], opts);
+        var ba = E.analyze(docs[p[1]].text, [docs[p[0]]], opts);
+        cells.push({ a: p[0], b: p[1], simAB: ab.similarityIndex, simBA: ba.similarityIndex,
+                     max: Math.max(ab.similarityIndex, ba.similarityIndex) });
+      });
+    });
+    chain.then(function () {
+      renderCross(docs, cells, opts);
+    }).catch(function (err) {
+      toast("Cross-compare failed: " + (err && err.message || err));
+    }).then(function () {
+      btn.disabled = false; prog.hidden = true; prog.firstElementChild.style.width = "0";
+    });
+  }
+
+  function heatColor(v) {
+    var steps = ["--heat-0", "--heat-1", "--heat-2", "--heat-3", "--heat-4", "--heat-5", "--heat-6"];
+    var idx = v <= 0.02 ? 0 : v < 0.08 ? 1 : v < 0.16 ? 2 : v < 0.28 ? 3 : v < 0.45 ? 4 : v < 0.65 ? 5 : 6;
+    return { bg: "var(" + steps[idx] + ")", ink: idx >= 4 ? "var(--heat-ink-hi)" : "var(--heat-ink-lo)" };
+  }
+
+  function renderCross(docs, cells, opts) {
+    var wrap = $("#cross-result");
+    var byKey = {};
+    cells.forEach(function (c) { byKey[c.a + ":" + c.b] = c; });
+    var html = "<div class='heat-scroll'><table class='heat'><thead><tr><th></th>";
+    docs.forEach(function (d) { html += "<th title='" + esc(d.title) + "'>" + esc(short(d.title, 16)) + "</th>"; });
+    html += "</tr></thead><tbody>";
+    docs.forEach(function (dr, r) {
+      html += "<tr><th title='" + esc(dr.title) + "'>" + esc(short(dr.title, 22)) + "</th>";
+      docs.forEach(function (dc, c) {
+        if (r === c) { html += "<td class='cell self' aria-hidden='true'></td>"; return; }
+        var cell = byKey[Math.min(r, c) + ":" + Math.max(r, c)];
+        var col = heatColor(cell.max);
+        html += "<td class='cell' data-a='" + Math.min(r, c) + "' data-b='" + Math.max(r, c) + "'" +
+          " style='background:" + col.bg + ";color:" + col.ink + "'" +
+          " title='" + esc(dr.title) + " ↔ " + esc(dc.title) + ": " + pct(cell.max) + "%'>" +
+          pct(cell.max, 0) + "</td>";
+      });
+      html += "</tr>";
+    });
+    html += "</tbody></table></div>";
+
+    var ranked = cells.slice().sort(function (a, b) { return b.max - a.max; }).slice(0, 12)
+      .filter(function (c) { return c.max >= 0.02; });
+    if (ranked.length) {
+      html += "<hr class='rule'><h3 style='font-size:.95rem'>Highest-overlap pairs</h3>";
+      ranked.forEach(function (c) {
+        html += "<div class='src-row'><div class='t'>" + esc(docs[c.a].title) + " ↔ " + esc(docs[c.b].title) +
+          "<div class='sub'>A→B " + pct(c.simAB) + "% · B→A " + pct(c.simBA) + "%</div></div>" +
+          "<div class='mini-bar'><div style='width:" + Math.min(100, c.max * 100) + "%'></div></div>" +
+          "<div class='pct'>" + pct(c.max) + "%</div>" +
+          "<button class='btn btn-sm' data-a='" + c.a + "' data-b='" + c.b + "'>Side by side</button></div>";
+      });
+    } else {
+      html += "<p class='hint' style='margin-top:1rem'>No meaningful overlap between any pair — every document reads as distinct.</p>";
+    }
+    html += "<div id='cross-duo'></div>";
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll("[data-a]").forEach(function (elBtn) {
+      elBtn.addEventListener("click", function () {
+        var a = +elBtn.getAttribute("data-a"), b = +elBtn.getAttribute("data-b");
+        var r = E.analyze(docs[a].text, [docs[b]], opts);
+        var rep = {
+          text: docs[a].text, title: docs[a].title, sources: [docs[b]],
+          tokenMeta: r.tokenMeta, perSource: r.perSource
+        };
+        r.perSource[0].srcIndex = 0;
+        var duoWrap = $("#cross-duo");
+        duoWrap.innerHTML = "<hr class='rule'><h3 style='font-size:.95rem'>" + esc(docs[a].title) +
+          " ↔ " + esc(docs[b].title) + " — " + pct(r.similarityIndex) + "%</h3>" +
+          duoHTML(rep, r.perSource[0]);
+        duoWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+  function short(t, n) { return t.length > n ? t.slice(0, n - 1) + "…" : t; }
+
+  /* ---------------- sample ---------------- */
+  var SAMPLE_SOURCE = "Detector design notes (sample)\n\nA trustworthy similarity checker must explain its verdict, showing exactly which passages match and where they came from. Scores without evidence are worse than no scores at all, because they invite both false confidence and false accusation. Modern detectors therefore combine several signals: word n-gram fingerprints survive reordering, sentence-level alignment captures light edits, and normalized token streams defeat character tricks. Finally, the report should separate quotation from appropriation, since citing a source honestly is the opposite of hiding one.";
+  var SAMPLE_SUSPECT = "Draft: how our checker should behave (sample)\n\nOur team wants tooling we can defend in front of a client. A trustworthy similarity checker must explain its verdict, showing exactly which passages match and where they came from. We also believe detectors should mix multiple signals, since fingerprints of word n-grams keep working after reordering while alignment at the sentence level picks up light edits. As one of our references puts it, “Scores without evidence are worse than no scores at all, because they invite both false confidence and false accusation.” Beyond that, everything here is our own: we care about warm onboarding, a steady cadence of review rounds, and shipping something the whole team actually opens on Monday mornings.";
+
+  function loadSample() {
+    var have = state.library.some(function (d) { return d.title === "Detector design notes (sample)"; });
+    if (!have) addDoc("Detector design notes (sample)", "Aleris sample", SAMPLE_SOURCE);
+    setMode("library");
+    $("#check-title").value = "Draft: how our checker should behave (sample)";
+    $("#check-text").value = SAMPLE_SUSPECT;
+    toast("Sample loaded — a sample source was added to the library. Hit “Run check”.");
+    $("#run-check").focus();
+  }
+
+  /* ---------------- views ---------------- */
+  function switchView(name) {
+    ["check", "cross", "library"].forEach(function (v) {
+      $("#view-" + v).hidden = v !== name;
+      $("#tab-" + v).setAttribute("aria-selected", String(v === name));
+    });
+    updateScopeNote();
+  }
+
+  /* ---------------- wiring ---------------- */
+  function boot() {
+    loadLocal();
+    renderLibrary();
+    updateScopeNote();
+    bootTeam();
+    wireJumps($("#report"));
+    wireJumps($("#cross-result"));
+
+    document.querySelectorAll(".tab").forEach(function (t) {
+      t.addEventListener("click", function () { switchView(t.getAttribute("data-view")); });
+    });
+    $("#mode-library").addEventListener("click", function () { setMode("library"); });
+    $("#mode-adhoc").addEventListener("click", function () { setMode("adhoc"); });
+    $("#run-check").addEventListener("click", runCheck);
+    $("#load-sample").addEventListener("click", loadSample);
+    $("#run-cross").addEventListener("click", runCross);
+
+    $("#check-browse").addEventListener("click", function () { pickFiles("check"); });
+    $("#adhoc-browse").addEventListener("click", function () { pickFiles("adhoc"); });
+    $("#lib-browse").addEventListener("click", function () { pickFiles("library"); });
+    $("#file-input").addEventListener("change", function (e) {
+      if (e.target.files.length) handleFiles(filePickTarget, e.target.files);
+    });
+    wireDrop($("#check-drop"), function (f) { handleFiles("check", f); });
+    wireDrop($("#adhoc-drop"), function (f) { handleFiles("adhoc", f); });
+    wireDrop($("#lib-drop"), function (f) { handleFiles("library", f); });
+
+    $("#lib-add").addEventListener("click", function () {
+      var text = $("#lib-text").value;
+      if (!text.trim()) { toast("Paste the document text first."); return; }
+      addDoc($("#lib-title").value, $("#lib-author").value, text);
+      $("#lib-title").value = ""; $("#lib-author").value = ""; $("#lib-text").value = "";
+      toast("Added to the library.");
+    });
+    $("#lib-export").addEventListener("click", exportLibrary);
+    $("#lib-import").addEventListener("click", function () {
+      var input = $("#json-input");
+      input.value = ""; input.click();
+    });
+    $("#json-input").addEventListener("change", function (e) {
+      if (e.target.files.length) importLibraryFile(e.target.files[0]);
+    });
+
+    ["opt-minrun", "opt-quotes", "opt-refs"].forEach(function (id) {
+      $("#" + id).addEventListener("change", saveLocal);
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+
+</script>
+</body>
+</html>
