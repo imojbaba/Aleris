@@ -1,0 +1,18 @@
+{
+  "name": "vigil",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vigil — a dead man's trigger for the things you never got around to saying.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' run build",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "api:dev": "pnpm --filter @vigil/api dev",
+    "mobile:start": "pnpm --filter @vigil/mobile start"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
