@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useVigilFonts } from './src/theme/fonts.js';
+import { palette } from './src/theme/tokens.js';
 import { STEADY, checkIn, freshState, plan, type Workflow, type TriggerState } from '@vigil/core';
 import { HomeScreen } from './src/screens/HomeScreen.js';
 import { ArmTriggerScreen } from './src/screens/ArmTriggerScreen.js';
@@ -16,8 +19,23 @@ import type { TriggerStatus } from './src/theme/status.js';
 
 export default function App() {
   const now = Date.now();
+  const { loaded, error } = useVigilFonts();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [state, setState] = useState<TriggerState>(freshState(now, 'DRAFT'));
+
+  /**
+   * Hold the first paint until the type is ready. A flash of fallback serif
+   * followed by a reflow is worse than a beat of nothing — and if the fonts
+   * genuinely fail we carry on with the fallback stacks rather than trapping
+   * the user on a spinner over a cosmetic problem.
+   */
+  if (!loaded && !error) {
+    return (
+      <View style={{ flex: 1, backgroundColor: palette.paper, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={palette.ember} />
+      </View>
+    );
+  }
 
   if (!workflow) {
     return (

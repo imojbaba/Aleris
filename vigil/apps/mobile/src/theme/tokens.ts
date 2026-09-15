@@ -86,10 +86,15 @@ export const radius = { sm: 6, md: 12, lg: 20, xl: 28, pill: 999 } as const;
 export const type = {
   /** Anything a person wrote, or will read as if a person wrote it. */
   serif: 'Newsreader',
-  serifFallback: 'Georgia, serif',
   /** The machinery: labels, buttons, status, numbers. */
   sans: 'IBM Plex Sans',
-  sansFallback: 'system-ui, sans-serif',
+  /**
+   * Fallbacks with close metrics, so a failed load degrades to something of
+   * roughly the right colour and width rather than reflowing every screen.
+   * See `theme/fonts.ts` for how the real faces are registered and chosen.
+   */
+  serifFallback: 'Georgia, "Times New Roman", serif',
+  sansFallback: 'system-ui, -apple-system, "Segoe UI", sans-serif',
 } as const;
 
 export const scale = {

@@ -18,7 +18,15 @@
     "expo-secure-store": "~14.0.0",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",
-    "react-native": "0.76.5"
+    "react-native": "0.76.5",
+    "react-dom": "18.3.1",
+    "react-native-web": "~0.19.13",
+    "@expo/metro-runtime": "~4.0.1",
+    "@babel/runtime": "^7.26.0",
+    "expo-font": "~13.0.4",
+    "expo-splash-screen": "~0.29.18",
+    "@expo-google-fonts/newsreader": "^0.4.1",
+    "@expo-google-fonts/ibm-plex-sans": "^0.4.1"
   },
   "devDependencies": {
     "@types/react": "~18.3.12",

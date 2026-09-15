@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text as RNText, type TextProps, type TextStyle } from 'react-native';
 import { palette, scale, type } from '../theme/tokens.js';
+import { weightedFamily } from '../theme/fonts.js';
 
 type Variant = keyof typeof scale;
 
@@ -25,8 +26,10 @@ export function Type({ variant = 'body', face, color, center, style, ...rest }: 
   const base: TextStyle = {
     fontSize: s.size,
     lineHeight: s.lineHeight,
-    fontWeight: s.weight,
-    fontFamily: resolved === 'serif' ? type.serif : type.sans,
+    // The family carries the weight: React Native picks a face by NAME, and a
+    // `fontWeight` alongside a custom family is ignored on Android and faked by
+    // synthetic bolding on iOS. Both are worse than asking for the real cut.
+    fontFamily: weightedFamily(resolved, s.weight),
     color: color ?? palette.ink,
     ...(center ? { textAlign: 'center' } : null),
     ...(variant === 'label' ? { letterSpacing: 0.6, textTransform: 'uppercase' } : null),
