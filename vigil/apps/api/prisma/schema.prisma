@@ -1,0 +1,281 @@
+// Vigil data model.
+//
+// Read this file as a statement of what Vigil knows about its users, because
+// that is what it is. Anything not listed here, we do not have. Note in
+// particular what is absent: no plaintext vault content, no plaintext titles or
+// labels, no master keys, no passphrases, no claim codes. The service holds
+// ciphertext, timing metadata, and the contact details it needs in order to
+// reach people — nothing that opens anything.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  displayName String
+  createdAt   DateTime @default(now())
+
+  // Argon2id parameters and the master key wrapped under the passphrase-derived
+  // KEK. Stored so a user can restore onto a new phone. Worthless to us: we
+  // cannot derive the KEK, and there is deliberately no reset path. A support
+  // agent who wanted to help a locked-out user could not, which is the point.
+  kdfSalt          String
+  kdfParamsM       Int
+  kdfParamsT       Int
+  kdfParamsP       Int
+  wrappedMasterKey String
+
+  // X25519 public key. Others seal things TO this; the private half never leaves
+  // the user's device.
+  publicKey String
+
+  triggers    Trigger[]
+  vaults      Vault[]
+  recipients  Recipient[]
+  auditEvents AuditEvent[]
+
+  @@index([email])
+}
+
+model Trigger {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name   String
+  status TriggerStatus @default(DRAFT)
+
+  // Config is stored as JSON and validated by @vigil/shared on the way in. It
+  // changes shape as the product learns; the state machine in @vigil/core is
+  // the single reader.
+  config Json
+
+  lastCheckInAt DateTime
+  statusSince   DateTime @default(now())
+  pausedUntil   DateTime?
+
+  // Denormalised so the worker can find due triggers with one indexed scan
+  // rather than re-deriving milestones for every row in the table.
+  nextEvaluationAt DateTime?
+
+  grants       Grant[]
+  attestations Attestation[]
+  nudges       Nudge[]
+  deliveries   Delivery[]
+  createdAt    DateTime @default(now())
+
+  @@index([status, nextEvaluationAt])
+  @@index([userId])
+}
+
+enum TriggerStatus {
+  DRAFT
+  ACTIVE
+  GRACE
+  ESCALATING
+  VERIFICATION_HOLD
+  RELEASING
+  RELEASED
+  PAUSED
+  CANCELLED
+}
+
+model Vault {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Encrypted. A vault called "For Maya, before the operation" would otherwise
+  // leak most of what there is to know without decrypting a single item.
+  encryptedTitle  String
+  wrappedVaultKey String
+
+  // Non-sensitive: lets the app render a recognisable card before unlock.
+  accent String?
+  glyph  String?
+
+  items     VaultItem[]
+  grants    Grant[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+model VaultItem {
+  id      String @id @default(uuid())
+  vaultId String
+  vault   Vault  @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+
+  kind           VaultItemKind
+  encryptedLabel String
+  // Small payloads inline; large ones hold an encrypted manifest of object-store
+  // keys, each blob separately encrypted under its own derived key.
+  ciphertext     String
+  sizeBytes      Int           @default(0)
+  createdAt      DateTime      @default(now())
+
+  @@index([vaultId])
+}
+
+enum VaultItemKind {
+  LETTER
+  DOCUMENT
+  PHOTO
+  VIDEO
+  AUDIO
+  CREDENTIAL
+  LINK
+  PLAYLIST
+  INSTRUCTION
+}
+
+model Recipient {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  displayName  String
+  email        String?
+  phone        String?
+  relationship String?
+
+  // Set once the recipient installs Vigil and enrols. Its presence is what
+  // upgrades a grant from SPLIT_CUSTODY to RECIPIENT_KEYED.
+  publicKey String?
+
+  // A recipient may also be trusted to answer "is this person alright?".
+  // Verifiers are never shown vault contents — only the question.
+  isVerifier Boolean @default(false)
+
+  grants       Grant[]
+  attestations Attestation[]
+  deliveries   Delivery[]
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+// The join between a vault and the person who will receive it. The `grant`
+// JSON is produced on the owner's device and is opaque to the server.
+model Grant {
+  id          String    @id @default(uuid())
+  vaultId     String
+  vault       Vault     @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  triggerId   String
+  trigger     Trigger   @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+
+  mode          GrantMode
+  grantPayload  Json
+  encryptedNote String?
+
+  deliveries Delivery[]
+  createdAt  DateTime @default(now())
+
+  @@unique([vaultId, recipientId, triggerId])
+  @@index([triggerId])
+}
+
+enum GrantMode {
+  RECIPIENT_KEYED
+  SPLIT_CUSTODY
+}
+
+model Attestation {
+  id          String    @id @default(uuid())
+  triggerId   String
+  trigger     Trigger   @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  verdict AttestationVerdict
+  note     String?
+  at       DateTime           @default(now())
+
+  // Hash only. The token itself lives in the email we sent and nowhere else, so
+  // a database reader cannot mint an attestation on someone's behalf.
+  tokenHash String  @unique
+  usedAt    DateTime?
+
+  @@index([triggerId])
+}
+
+enum AttestationVerdict {
+  ALIVE
+  DECEASED
+  UNSURE
+}
+
+model Nudge {
+  id        String   @id @default(uuid())
+  triggerId String
+  trigger   Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  step      Int
+  channel   Channel
+  sentAt    DateTime @default(now())
+  // Provider-reported outcome. A hard bounce is a signal the owner may be
+  // unreachable rather than absent, and is surfaced to them on their next visit.
+  outcome   String?
+
+  @@index([triggerId, step])
+}
+
+enum Channel {
+  PUSH
+  EMAIL
+  SMS
+  WHATSAPP
+  VOICE
+}
+
+model Delivery {
+  id          String    @id @default(uuid())
+  triggerId   String
+  trigger     Trigger   @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  grantId     String
+  grant       Grant     @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  status      DeliveryStatus @default(PENDING)
+  // Hash of the claim code. The code itself is generated at release, put into
+  // the delivery message, and never written down here.
+  claimCodeHash String?
+  dispatchedAt  DateTime?
+  claimedAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([triggerId])
+  @@index([status])
+}
+
+enum DeliveryStatus {
+  PENDING
+  DISPATCHED
+  CLAIMED
+  FAILED
+}
+
+// Append-only. Every state change, every message sent, every time anyone looked
+// at anything. The owner can read the whole log; it is the only way a promise
+// like "we never opened it" can be checked rather than believed.
+model AuditEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  at        DateTime @default(now())
+  kind      String
+  summary   String
+  detail    Json?
+
+  @@index([userId, at])
+}
