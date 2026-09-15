@@ -73,13 +73,23 @@ export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48, 
 
 export const radius = { sm: 6, md: 12, lg: 20, xl: 28, pill: 999 } as const;
 
+/**
+ * The pairing carries the product's central distinction, so it is chosen rather
+ * than defaulted. Newsreader is an editorial serif with genuine warmth — it
+ * reads like something a person wrote to another person, which is what most of
+ * the content in Vigil actually is. IBM Plex Sans is precise and faintly
+ * technical, which is right for the machinery: countdowns, statuses, buttons.
+ *
+ * The contrast is the point. When the type changes, the voice changes, and the
+ * user can feel which parts are theirs and which parts are ours.
+ */
 export const type = {
   /** Anything a person wrote, or will read as if a person wrote it. */
-  serif: 'Lora',
-  serifFallback: 'Georgia',
+  serif: 'Newsreader',
+  serifFallback: 'Georgia, serif',
   /** The machinery: labels, buttons, status, numbers. */
-  sans: 'Inter',
-  sansFallback: 'System',
+  sans: 'IBM Plex Sans',
+  sansFallback: 'system-ui, sans-serif',
 } as const;
 
 export const scale = {

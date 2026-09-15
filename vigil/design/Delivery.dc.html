@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;0,6..72,400&family=IBM+Plex+Sans:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+    a { color: #C25A1E; } a:hover { color: #9E4715; }
+  </style>
+</helmet>
+
+<!-- The recipient's moment.
+     Deliberately not the app: no navigation, no branding at the top, no
+     product. Someone who has just been bereaved opens a link from a service
+     they have never heard of. The page should feel like being handed an
+     envelope, and should be in no hurry whatsoever. -->
+<div style="width: 390px; height: 844px; background: #F3EDE3; display: flex; flex-direction: column; justify-content: center; padding: 48px 34px; box-sizing: border-box; overflow: hidden;">
+
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 34px;">
+
+    <svg width="52" height="64" viewBox="0 0 64 78" fill="none" aria-hidden="true">
+      <ellipse cx="32" cy="46" rx="30" ry="30" fill="#C25A1E" opacity="0.06"/>
+      <path d="M32 12 C 42 28, 50 34, 50 46 A 18 18 0 0 1 14 46 C 14 34, 22 28, 32 12 Z" fill="#C25A1E" opacity="0.75"/>
+      <path d="M32 34 C 37 42, 39 44, 39 50 A 7 7 0 0 1 25 50 C 25 44, 27 42, 32 34 Z" fill="#FBE3D2" opacity="0.8"/>
+    </svg>
+
+    <div style="text-align: center;">
+      <p style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 31px; line-height: 42px; font-weight: 300; color: #1F1A15; text-wrap: pretty;">
+        Jo left this for you.
+      </p>
+      <p style="margin: 22px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 19px; line-height: 31px; font-weight: 300; color: #4A4239; text-wrap: pretty;">
+        A letter, a photograph, and something she recorded in her own voice.
+      </p>
+      <p style="margin: 22px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 19px; line-height: 31px; font-weight: 300; color: #4A4239; text-wrap: pretty;">
+        She set this up a long time ago, and asked us to wait until she had been quiet for a while. We waited, and we tried many times to reach her first.
+      </p>
+    </div>
+
+    <div style="width: 44px; height: 1px; background: #E4DACA;"></div>
+
+    <p style="margin: 0; text-align: center; font-size: 13.5px; line-height: 21px; color: #8A7F71; text-wrap: pretty;">
+      There is no rush. This will still be here tomorrow, and next month, and next year.
+    </p>
+
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+      <button style="height: 58px; border: none; border-radius: 999px; background: #1F1A15; color: #FBF7F0; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 16.5px; font-weight: 500; cursor: pointer;">
+        Open when you’re ready
+      </button>
+      <button style="height: 52px; border: none; border-radius: 999px; background: transparent; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; font-weight: 500; color: #8A7F71; cursor: pointer;">
+        Not today
+      </button>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

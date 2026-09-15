@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+    a { color: #C25A1E; } a:hover { color: #9E4715; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; background: #FBF7F0; display: flex; flex-direction: column; padding: 56px 28px 36px; box-sizing: border-box; overflow: hidden;">
+
+  <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.7px; text-transform: uppercase; color: #8A7F71;">
+    If I go quiet
+  </div>
+
+  <!-- The flame is the entire status display: readable across a room, no words needed -->
+  <div style="display: flex; flex-direction: column; align-items: center; margin-top: 44px;">
+    <svg width="150" height="150" viewBox="0 0 150 150" fill="none" aria-label="All is well">
+      <circle cx="75" cy="78" r="66" fill="#5B7A63" opacity="0.07"/>
+      <circle cx="75" cy="78" r="44" fill="#5B7A63" opacity="0.11"/>
+      <circle cx="75" cy="78" r="27" fill="#5B7A63" opacity="0.16"/>
+      <path d="M75 34 C 89 58, 100 66, 100 80 A 25 25 0 0 1 50 80 C 50 66, 61 58, 75 34 Z" fill="#5B7A63"/>
+      <path d="M75 64 C 81 76, 84 79, 84 86 A 9 9 0 0 1 66 86 C 66 79, 69 76, 75 64 Z" fill="#DCE6DD" opacity="0.9"/>
+    </svg>
+
+    <h1 style="margin: 26px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 36px; line-height: 43px; font-weight: 400; color: #1F1A15;">
+      All is well
+    </h1>
+    <p style="margin: 10px 0 0; max-width: 268px; text-align: center; font-size: 14.5px; line-height: 22px; color: #4A4239;">
+      Nobody has been contacted. Nothing has been sent.
+    </p>
+  </div>
+
+  <!-- Press-and-hold: cannot be done by a pocket, and ends on a haptic full stop -->
+  <div style="margin-top: 40px; height: 64px; border-radius: 999px; background: #F3EDE3; border: 1px solid #E4DACA; display: flex; align-items: center; justify-content: center; gap: 10px; position: relative; overflow: hidden;">
+    <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 38%; background: #FBE3D2;"></div>
+    <div style="position: relative; display: flex; align-items: center; gap: 10px;">
+      <div style="width: 8px; height: 8px; border-radius: 999px; background: #5B7A63;"></div>
+      <span style="font-size: 18px; font-weight: 500; color: #1F1A15;">Hold to say you’re here</span>
+    </div>
+  </div>
+  <p style="margin: 14px 0 0; text-align: center; font-size: 13px; line-height: 19px; color: #8A7F71;">
+    Next check-in in 3 weeks. There is no hurry.
+  </p>
+
+  <div style="flex-grow: 1;"></div>
+
+  <div style="background: #FFFFFF; border: 1px solid #E4DACA; border-radius: 20px; padding: 22px;">
+    <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.7px; text-transform: uppercase; color: #8A7F71;">
+      What you have made ready
+    </div>
+    <p style="margin: 10px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 19px; line-height: 28px; font-weight: 400; color: #1F1A15;">
+      Three vaults, for four people.
+    </p>
+    <p style="margin: 10px 0 0; font-size: 13px; line-height: 19px; color: #8A7F71;">
+      Only you can open these. They stay sealed until every condition you set is met.
+    </p>
+  </div>
+
+  <p style="margin: 22px 0 0; text-align: center; font-size: 12.5px; line-height: 19px; color: #8A7F71; text-wrap: pretty;">
+    If you never opened this app again, nothing would be sent for 2 months — and we would try to reach you many times first.
+  </p>
+
+</div>
+</x-dc>
+</body>
+</html>
