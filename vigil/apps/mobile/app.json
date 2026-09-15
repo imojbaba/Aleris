@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Vigil",
+    "slug": "vigil",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "vigil",
+    "splash": { "backgroundColor": "#FBF7F0", "resizeMode": "contain" },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.vigil.mobile",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Vigil uses Face ID to unlock your vaults on this device. Your passphrase never leaves your phone."
+      }
+    },
+    "android": {
+      "package": "app.vigil.mobile",
+      "adaptiveIcon": { "backgroundColor": "#FBF7F0" }
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}
