@@ -55,7 +55,7 @@ export interface SealedShare {
   kind: CustodianKind;
   index: number;
   /** Sealed to either the custodian's public key or their claim code. */
-  protection: 'PUBLIC_KEY' | 'CLAIM_CODE';
+  protection: 'PUBLIC_KEY' | 'CLAIM_CODE' | 'RELATIONSHIP_PROOF';
   sealed: string;
 }
 

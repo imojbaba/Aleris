@@ -1,4 +1,4 @@
-import { evaluate, applyDecision, type Action, type Decision } from '@vigil/core';
+import { evaluate, applyDecision, type Action } from '@vigil/core';
 import type {
   Clock, Locks, Notifier, OutboundMessage, TriggerRecord, TriggerRepository, Tokens,
 } from './ports.js';
@@ -61,20 +61,20 @@ export class ReleaseEngine {
   }
 
   private async processOne(trigger: TriggerRecord, now: number) {
-    const decision = evaluate(trigger.config, trigger.state, now);
+    const decision = evaluate(trigger.workflow, trigger.state, now);
     let messagesSent = 0;
     let released = false;
 
     for (const action of decision.actions) {
-      messagesSent += await this.perform(trigger, action, decision, now);
-      if (action.kind === 'RELEASE') released = true;
+      messagesSent += await this.perform(trigger, action);
+      if (action.kind === 'FIRE') released = true;
     }
 
-    const nextState = applyDecision(trigger.state, decision, now);
+    // applyDecision moves the trigger to DELIVERED in the same step that records
+    // the FIRE, so a second tick cannot deliver again even if this crashes here.
     await this.deps.repo.saveState(
       trigger.id,
-      // RELEASING is a transient state; once deliveries exist the trigger is done.
-      released ? { ...nextState, status: 'RELEASED', statusSince: now } : nextState,
+      applyDecision(trigger.state, decision, now),
       decision.nextEvaluationAt,
     );
 
@@ -82,30 +82,25 @@ export class ReleaseEngine {
       await this.deps.repo.appendAudit(
         trigger.userId,
         'TRIGGER_STATUS_CHANGED',
-        `${trigger.name}: ${trigger.state.status} → ${released ? 'RELEASED' : decision.status}. ${decision.reason}`,
-        { from: trigger.state.status, to: decision.status, reason: decision.reason },
+        `${trigger.name}: ${trigger.state.status} → ${decision.status}. ${decision.reason}`,
+        { from: trigger.state.status, to: decision.status, reason: decision.reason, step: decision.currentStepId },
       );
     }
 
     return { messagesSent, released };
   }
 
-  private async perform(
-    trigger: TriggerRecord,
-    action: Action,
-    decision: Decision,
-    now: number,
-  ): Promise<number> {
+  private async perform(trigger: TriggerRecord, action: Action): Promise<number> {
     switch (action.kind) {
-      case 'NUDGE_OWNER':
-        return this.nudgeOwner(trigger, action.step, action.channels, now);
-      case 'NOTIFY_OWNER_FINAL_WARNING':
-        return this.nudgeOwner(trigger, -1, ['EMAIL', 'SMS', 'PUSH'], now, 'FINAL_WARNING');
-      case 'ASK_VERIFIERS':
-        return this.askVerifiers(trigger, action.verifierIds, now);
-      case 'RELEASE':
-        return this.release(trigger, now);
-      case 'RECORD_STAND_DOWN':
+      case 'REMIND_OWNER':
+        return this.remindOwner(trigger, action);
+      case 'WELLBEING_CHECK':
+        return this.wellbeingCheck(trigger, action);
+      case 'REQUEST_CONFIRMATION':
+        return this.requestConfirmation(trigger, action);
+      case 'FIRE':
+        return this.deliver(trigger, this.deps.clock.now());
+      case 'STAND_DOWN':
         await this.deps.repo.appendAudit(
           trigger.userId, 'STAND_DOWN', `${trigger.name}: stood down. ${action.because}`,
         );
@@ -113,65 +108,107 @@ export class ReleaseEngine {
     }
   }
 
-  private async nudgeOwner(
+  private async remindOwner(
     trigger: TriggerRecord,
-    step: number,
-    channels: OutboundMessage['channel'][],
-    now: number,
-    template: OutboundMessage['template'] = step < 0 ? 'FINAL_WARNING' : 'ESCALATION',
+    action: Extract<Action, { kind: 'REMIND_OWNER' }>,
   ): Promise<number> {
     const owner = await this.deps.repo.owner(trigger.userId);
     if (!owner) return 0;
+    const now = this.deps.clock.now();
 
     let sent = 0;
-    for (const channel of channels) {
+    for (const channel of action.channels) {
       const result = await this.deps.notifier.send({
         channel,
         to: { email: owner.email, userId: owner.id },
-        template,
+        template: 'REMIND_OWNER',
         variables: {
           name: owner.displayName,
           trigger: trigger.name,
+          // The owner's own words, if they wrote any for this step.
+          message: action.message ?? '',
           checkInUrl: `${this.deps.appBaseUrl}/check-in/${trigger.id}`,
         },
       });
-      if (step >= 0) await this.deps.repo.recordNudge(trigger.id, step, channel, now);
+      // Recorded as an ATTEMPT, not a delivery: a permanently bouncing address
+      // must not hold someone's legacy hostage forever.
+      await this.deps.repo.recordAttempt(trigger.id, action.stepId, action.occurrence, channel, now);
       if (result.ok) sent += 1;
     }
     return sent;
   }
 
-  private async askVerifiers(trigger: TriggerRecord, verifierIds: string[], now: number): Promise<number> {
+  /**
+   * Ask the people the owner named whether the owner is alright.
+   *
+   * They are told nothing else: not that a vault exists, not what is in it, not
+   * who else was contacted, not who the recipients are. One question, in the
+   * owner's own words, and a one-time link.
+   */
+  private async wellbeingCheck(
+    trigger: TriggerRecord,
+    action: Extract<Action, { kind: 'WELLBEING_CHECK' }>,
+  ): Promise<number> {
+    const owner = await this.deps.repo.owner(trigger.userId);
     let sent = 0;
-    for (const verifierId of verifierIds) {
-      const verifier = await this.deps.repo.recipient(verifierId);
-      if (!verifier) continue;
+
+    for (const contactId of action.contactIds) {
+      const contact = await this.deps.repo.recipient(contactId);
+      if (!contact) continue;
 
       // The token goes in the message; only its hash is stored. A reader of our
-      // database cannot answer on a verifier's behalf.
+      // database cannot answer on someone else's behalf.
       const { token, hash } = this.deps.tokens.mint();
-      await this.deps.repo.recordAttestationToken(trigger.id, verifierId, hash);
+      await this.deps.repo.recordAnswerToken(trigger.id, contactId, hash);
 
-      const owner = await this.deps.repo.owner(trigger.userId);
+      for (const channel of action.channels) {
+        const result = await this.deps.notifier.send({
+          channel,
+          to: { email: contact.email, phone: contact.phone },
+          template: 'WELLBEING_CHECK',
+          variables: {
+            contactName: contact.displayName,
+            ownerName: owner?.displayName ?? 'someone who trusts you',
+            script: action.script ?? '',
+            answerUrl: `${this.deps.appBaseUrl}/wellbeing/${token}`,
+            requiresOtp: action.requireOtp ? 'yes' : 'no',
+          },
+        });
+        if (result.ok) sent += 1;
+      }
+    }
+
+    if (sent > 0) {
+      await this.deps.repo.appendAudit(
+        trigger.userId, 'WELLBEING_CHECK',
+        `${trigger.name}: asked ${action.contactIds.length} ${action.contactIds.length === 1 ? 'person' : 'people'} whether you are alright.`,
+      );
+    }
+    return sent;
+  }
+
+  private async requestConfirmation(
+    trigger: TriggerRecord,
+    action: Extract<Action, { kind: 'REQUEST_CONFIRMATION' }>,
+  ): Promise<number> {
+    const owner = await this.deps.repo.owner(trigger.userId);
+    let sent = 0;
+    for (const contactId of action.from) {
+      const contact = await this.deps.repo.recipient(contactId);
+      if (!contact) continue;
+      const { token, hash } = this.deps.tokens.mint();
+      await this.deps.repo.recordAnswerToken(trigger.id, contactId, hash);
       const result = await this.deps.notifier.send({
-        channel: verifier.email ? 'EMAIL' : 'SMS',
-        to: { email: verifier.email, phone: verifier.phone },
-        template: 'VERIFIER_QUESTION',
+        channel: contact.email ? 'EMAIL' : 'SMS',
+        to: { email: contact.email, phone: contact.phone },
+        template: 'CONFIRMATION_REQUEST',
         variables: {
-          verifierName: verifier.displayName,
-          ownerName: owner?.displayName ?? 'someone who trusts you',
-          // The verifier is asked one question and shown nothing else. They are
-          // not told a vault exists, what is in it, or who else is involved.
-          answerUrl: `${this.deps.appBaseUrl}/confirm/${token}`,
+          contactName: contact.displayName,
+          ownerName: owner?.displayName ?? 'someone',
+          answerUrl: `${this.deps.appBaseUrl}/wellbeing/${token}`,
         },
       });
       if (result.ok) sent += 1;
-    }
-    if (sent > 0) {
-      await this.deps.repo.appendAudit(
-        trigger.userId, 'VERIFIERS_ASKED',
-        `${trigger.name}: asked ${sent} ${sent === 1 ? 'person' : 'people'} to confirm you are alright.`,
-      );
     }
     return sent;
   }
@@ -189,7 +226,7 @@ export class ReleaseEngine {
    *     verifiers' — and reassembles the vault key locally. At no instant does
    *     any single machine we control hold enough to open the vault.
    */
-  private async release(trigger: TriggerRecord, now: number): Promise<number> {
+  private async deliver(trigger: TriggerRecord, now: number): Promise<number> {
     const [grants, existing] = await Promise.all([
       this.deps.repo.grantsFor(trigger.id),
       this.deps.repo.deliveriesFor(trigger.id),
@@ -231,7 +268,7 @@ export class ReleaseEngine {
     }
 
     await this.deps.repo.appendAudit(
-      trigger.userId, 'RELEASED',
+      trigger.userId, 'DELIVERED',
       `${trigger.name}: released to ${sent} ${sent === 1 ? 'person' : 'people'}.`,
       { grants: grants.length, dispatched: sent },
     );

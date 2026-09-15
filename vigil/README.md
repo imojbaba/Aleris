@@ -13,7 +13,7 @@ and only after a long, loud, many-channelled attempt to reach you, and after
 someone who knows you has had the chance to say "they're fine" — what you left
 is delivered to the people you left it for.
 
-**Status:** working MVP. 152 tests, five packages, all typechecked.
+**Status:** working MVP. 174 tests, five packages, all typechecked.
 `vigil` is a working codename, not a branding decision.
 
 ---
@@ -22,16 +22,16 @@ is delivered to the people you left it for.
 
 ```
 vigil/
-├── packages/crypto    Key hierarchy, sealed boxes, Shamir split custody   (66 tests)
-├── packages/core      The trigger cascade as a pure function              (49 tests)
-├── packages/shared    Wire contract — enforces "no plaintext, ever"       (20 tests)
+├── packages/crypto    Key hierarchy, split custody, the redeem protocol  (80 tests)
+├── packages/core      Workflow model, validator and evaluator               (52 tests)
+├── packages/shared    Wire contract — enforces "no plaintext, ever"       (25 tests)
 ├── apps/api           Fastify service + cadence worker + release engine   (17 tests)
 └── apps/mobile        Expo app for iOS and Android
 ```
 
 ```bash
 pnpm install
-pnpm test          # 152 tests
+pnpm test          # 174 tests
 pnpm typecheck
 pnpm api:dev       # runs in memory; no database needed
 pnpm mobile:start
@@ -59,7 +59,38 @@ modified client cannot talk the service into holding enough.
 The test that pins it: *"CANNOT be opened by the service alone, even holding the
 whole database"* in `packages/crypto/test/release.test.ts`.
 
-### 2. A false positive is unforgivable, so the cascade is asymmetric
+### 2. The trigger is a workflow you write, not settings we chose
+
+Vigil's first version had a fixed cascade with knobs: an interval, a grace
+period, three escalation rungs. It was safe and it was wrong — it encoded *our*
+idea of how a person should be checked on. So the trigger is now an ordered list
+of steps the user composes:
+
+```
+check in every 30 days
+  ├─ email me 3 times, a day apart
+  ├─ then WhatsApp
+  ├─ wait 24 hours
+  ├─ then ring me — a voice agent, reading a script I wrote
+  ├─ then ask Ray and Nadia if I'm alright
+  └─ deliver
+```
+
+The hard part isn't expressing that. It's that every safety property the fixed
+cascade got for free now has to hold for a workflow someone else assembled.
+`validateWorkflow` is where that lives, and it refuses, among others:
+
+- **Three channels that are really one phone number.** WhatsApp, SMS and a voice
+  call all land on one SIM. *"One lost SIM and this fires while you are
+  perfectly well — add an email step."*
+- **Delivery hard on the heels of the last attempt.** *"Only 1 hour between the
+  last attempt to reach you and delivery. Leave at least 12 — someone who picks
+  up the phone needs time to stop this."*
+- **Anything that fires inside 24 hours**, however it is assembled.
+- **A confirmation gate that could never be satisfied** — three confirmations
+  required from two named people.
+
+### 3. A false positive is unforgivable, so the cascade is asymmetric
 
 A trigger that fires late is an inconvenience. A trigger that fires early sends a
 living person's credentials, their unsent letters, and possibly a goodbye to
@@ -90,6 +121,7 @@ death is unrecoverable; being wrong about life costs a delay.
 | [Architecture](docs/02-architecture.md) | How the pieces fit, and the release flow end to end |
 | [Threat model](docs/03-threat-model.md) | What we defend against — **and what we do not** |
 | [Production path](docs/04-production-path.md) | What stands between this and real users |
+| [Redeem flow](docs/05-redeem-flow.md) | How a bereaved person gets in, and how we prove they're the right person |
 
 ## Two things worth reading before building on this
 

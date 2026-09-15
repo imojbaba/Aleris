@@ -58,43 +58,90 @@ export const ChannelSchema = z.enum(['PUSH', 'EMAIL', 'SMS', 'WHATSAPP', 'VOICE'
 
 /* -------------------------------- triggers ------------------------------- */
 
-export const EscalationStepSchema = z.object({
-  afterDays: z.number().min(0).max(365),
+/**
+ * The trigger is a workflow the user wrote, not a config object with our
+ * opinions baked in. The server validates it with the same @vigil/core rules
+ * the app uses — not from distrust of our own client, but because a workflow
+ * that could hurt someone should be impossible to STORE, whatever software
+ * claims to be talking to us.
+ */
+
+const StepBase = { id: z.string().min(1).max(64), label: z.string().max(120).optional() };
+
+export const RemindOwnerStepSchema = z.object({
+  ...StepBase,
+  kind: z.literal('REMIND_OWNER'),
   channels: z.array(ChannelSchema).min(1),
+  times: z.number().int().min(1).max(50),
+  everyHours: z.number().positive().max(24 * 90),
+  message: z.string().max(1000).optional(),
 });
 
-export const VerificationConfigSchema = z.object({
-  verifierIds: z.array(Uuid),
-  requiredAttestations: z.number().int().min(0),
-  policy: z.enum(['REQUIRE_ATTESTATION', 'SILENCE_CONFIRMS']),
-  holdDays: z.number().min(0).max(365),
+export const WaitStepSchema = z.object({
+  ...StepBase,
+  kind: z.literal('WAIT'),
+  hours: z.number().min(0).max(24 * 365),
 });
 
-export const TriggerConfigSchema = z.object({
-  checkInIntervalDays: z.number().positive().max(1095),
-  graceDays: z.number().min(0).max(365),
-  escalation: z.array(EscalationStepSchema).min(1),
-  verification: VerificationConfigSchema,
+export const WellbeingCheckStepSchema = z.object({
+  ...StepBase,
+  kind: z.literal('WELLBEING_CHECK'),
+  contactIds: z.array(Uuid),
+  channels: z.array(ChannelSchema).min(1),
+  /**
+   * The owner's own wording for the message sent on their behalf. Capped and
+   * treated as untrusted text: it is rendered into an email to a third party,
+   * so it is escaped at the template boundary and never interpolated raw.
+   */
+  script: z.string().max(1000).optional(),
+  waitHours: z.number().min(0).max(24 * 365),
+  requireOtp: z.boolean().optional(),
+});
+
+export const RequireConfirmationStepSchema = z.object({
+  ...StepBase,
+  kind: z.literal('REQUIRE_CONFIRMATION'),
+  from: z.array(Uuid),
+  count: z.number().int().min(0).max(50),
+  timeoutHours: z.number().min(0).max(24 * 365),
+  onTimeout: z.enum(['HOLD', 'PROCEED']),
+});
+
+export const FireStepSchema = z.object({ ...StepBase, kind: z.literal('FIRE') });
+
+export const WorkflowStepSchema = z.discriminatedUnion('kind', [
+  RemindOwnerStepSchema,
+  WaitStepSchema,
+  WellbeingCheckStepSchema,
+  RequireConfirmationStepSchema,
+  FireStepSchema,
+]);
+
+export const WorkflowSchema = z.object({
+  checkInEveryDays: z.number().positive().max(1095),
+  steps: z.array(WorkflowStepSchema).min(2).max(40),
   acknowledgedRapidRelease: z.boolean().optional(),
 });
 
 export const CreateTriggerRequest = z.object({
   name: z.string().min(1).max(120),
-  config: TriggerConfigSchema,
+  workflow: WorkflowSchema,
 });
 
 export const TriggerStatusSchema = z.enum([
-  'DRAFT', 'ACTIVE', 'GRACE', 'ESCALATING', 'VERIFICATION_HOLD', 'RELEASING', 'RELEASED', 'PAUSED', 'CANCELLED',
+  'DRAFT', 'ACTIVE', 'REMINDING', 'WELLBEING_CHECK',
+  'AWAITING_CONFIRMATION', 'DELIVERING', 'DELIVERED', 'PAUSED', 'CANCELLED',
 ]);
 
 export const TriggerSummary = z.object({
   id: Uuid,
   name: z.string(),
   status: TriggerStatusSchema,
-  config: TriggerConfigSchema,
+  workflow: WorkflowSchema,
   lastCheckInAt: Iso,
   nextCheckInDueAt: Iso,
-  earliestReleaseAt: Iso,
+  earliestDeliveryAt: Iso,
+  currentStepId: z.string().nullable(),
   vaultCount: z.number().int().min(0),
 });
 
@@ -141,7 +188,7 @@ export const SealedShareSchema = z.object({
   custodianId: z.string(),
   kind: CustodianKindSchema,
   index: z.number().int().min(1).max(255),
-  protection: z.enum(['PUBLIC_KEY', 'CLAIM_CODE']),
+  protection: z.enum(['PUBLIC_KEY', 'CLAIM_CODE', 'RELATIONSHIP_PROOF']),
   sealed: Base64Url,
 });
 
@@ -179,8 +226,7 @@ export const CreateGrantRequest = z.object({
 
 export const CheckInRequest = z.object({
   triggerId: Uuid,
-  /** Where the check-in came from, for the audit log the owner can read. */
-  source: z.enum(['APP', 'EMAIL_LINK', 'SMS_REPLY', 'PASSIVE']).default('APP'),
+  source: z.enum(['APP', 'EMAIL_LINK', 'SMS_REPLY', 'VOICE_CALL', 'PASSIVE']).default('APP'),
 });
 
 export const PauseTriggerRequest = z.object({
@@ -189,19 +235,63 @@ export const PauseTriggerRequest = z.object({
   reason: z.string().max(280).optional(),
 });
 
-export const AttestationRequest = z.object({
-  token: z.string().min(16),
+/**
+ * A wellbeing check answer. The person answering is a member of the public
+ * holding a one-time link: the token IS the credential, it is single-use, and
+ * only its hash is stored. They are never shown, and can never ask for,
+ * anything about the vault.
+ */
+export const WellbeingAnswerRequest = z.object({
+  token: z.string().min(16).max(128),
   verdict: z.enum(['ALIVE', 'DECEASED', 'UNSURE']),
   note: z.string().max(500).optional(),
 });
 
-export const ClaimRequest = z.object({
+/* -------------------------------- redeeming ------------------------------ */
+
+/** Step 1: the recipient asks for a code at the address the owner recorded. */
+export const ClaimStartRequest = z.object({
   deliveryId: Uuid,
-  claimCode: z.string().min(16).max(64),
+  /** The opaque token from their delivery link. */
+  token: z.string().min(16).max(128),
+});
+
+/**
+ * Step 2: they prove control of that address, and hand us the public half of a
+ * keypair their browser just generated.
+ *
+ * The OTP gates the flow and rate-limits guessing. It is deliberately NOT what
+ * protects the vault — the custody shares are sealed to `claimPublicKey`, whose
+ * private half never leaves the recipient's device, so a server that skipped
+ * this check entirely would still learn nothing.
+ */
+export const ClaimVerifyRequest = z.object({
+  deliveryId: Uuid,
+  token: z.string().min(16).max(128),
+  otp: z.string().min(6).max(8),
+  claimPublicKey: Base64Url,
+});
+
+/**
+ * What comes back: the sealed grant, the owner's question, and every custody
+ * share that has been released to this session — each one a blob sealed to
+ * `claimPublicKey`. The answer to the question is never sent to us in any form.
+ */
+export const ClaimBundle = z.object({
+  deliveryId: Uuid,
+  ownerName: z.string(),
+  grant: GrantSchema,
+  question: z.string().max(200).optional(),
+  proofSalt: Base64Url.optional(),
+  relayedShares: z.array(z.object({ custodianId: z.string(), sealed: Base64Url })),
+  /** Custodians who have not yet released, so the page can say who is missing. */
+  awaiting: z.array(z.object({ custodianId: z.string(), displayName: z.string() })),
+  encryptedNote: Base64Url.optional(),
 });
 
 export type StoredIdentity = z.infer<typeof StoredIdentitySchema>;
-export type TriggerConfigDto = z.infer<typeof TriggerConfigSchema>;
+export type WorkflowDto = z.infer<typeof WorkflowSchema>;
+export type ClaimBundleDto = z.infer<typeof ClaimBundle>;
 export type GrantDto = z.infer<typeof GrantSchema>;
 export type TriggerSummaryDto = z.infer<typeof TriggerSummary>;
 export type Channel = z.infer<typeof ChannelSchema>;

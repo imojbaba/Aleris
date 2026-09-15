@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ScrollView, View, SafeAreaView } from 'react-native';
-import { humaniseDuration, milestones, type TriggerConfig, type TriggerState } from '@vigil/core';
+import { humaniseDuration, plan, type Workflow, type TriggerState } from '@vigil/core';
 import { STATUS, accentFor, type TriggerStatus } from '../theme/status.js';
 import { palette, space } from '../theme/tokens.js';
 import { Type } from '../components/Type.js';
@@ -25,7 +25,7 @@ interface Props {
   ownerName: string;
   triggerName: string;
   status: TriggerStatus;
-  config: TriggerConfig;
+  workflow: Workflow;
   state: TriggerState;
   now: number;
   vaultCount: number;
@@ -35,12 +35,12 @@ interface Props {
 }
 
 export function HomeScreen(props: Props) {
-  const { status, config, state, now, ownerName } = props;
+  const { status, workflow, state, now, ownerName } = props;
   const presentation = STATUS[status];
   const accent = accentFor(status);
-  const m = useMemo(() => milestones(config, state.lastCheckInAt), [config, state.lastCheckInAt]);
+  const p = useMemo(() => plan(workflow, state.lastCheckInAt), [workflow, state.lastCheckInAt]);
 
-  const untilDue = m.dueAt - now;
+  const untilDue = p.dueAt - now;
   const isSettled = status === 'ACTIVE' || status === 'DRAFT' || status === 'PAUSED';
 
   return (
@@ -68,7 +68,7 @@ export function HomeScreen(props: Props) {
           </Type>
         </View>
 
-        <PulseButton onComplete={props.onCheckIn} disabled={status === 'RELEASED' || status === 'CANCELLED'} />
+        <PulseButton onComplete={props.onCheckIn} disabled={status === 'DELIVERED' || status === 'CANCELLED'} />
 
         <Type variant="caption" center color={palette.inkFaint} style={{ marginTop: space.md }}>
           {untilDue > 0
@@ -99,7 +99,7 @@ export function HomeScreen(props: Props) {
         {isSettled && (
           <Type variant="caption" center color={palette.inkFaint} style={{ marginTop: space.xl }}>
             If you never opened this app again, nothing would be sent for{' '}
-            {humaniseDuration(m.earliestReleaseAt - now)} — and we would try to reach you many times
+            {humaniseDuration(p.fireAt - now)} — and we would try to reach you many times
             first, {ownerName}.
           </Type>
         )}

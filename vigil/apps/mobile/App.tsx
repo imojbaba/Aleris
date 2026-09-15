@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { DEFAULT_CONFIG, checkIn, milestones, type TriggerConfig, type TriggerState } from '@vigil/core';
+import { STEADY, checkIn, freshState, plan, type Workflow, type TriggerState } from '@vigil/core';
 import { HomeScreen } from './src/screens/HomeScreen.js';
 import { ArmTriggerScreen } from './src/screens/ArmTriggerScreen.js';
 import type { TriggerStatus } from './src/theme/status.js';
@@ -16,23 +16,17 @@ import type { TriggerStatus } from './src/theme/status.js';
 
 export default function App() {
   const now = Date.now();
-  const [config, setConfig] = useState<TriggerConfig | null>(null);
-  const [state, setState] = useState<TriggerState>({
-    status: 'DRAFT',
-    lastCheckInAt: now,
-    statusSince: now,
-    attestations: [],
-    nudgesSent: [],
-  });
+  const [workflow, setWorkflow] = useState<Workflow | null>(null);
+  const [state, setState] = useState<TriggerState>(freshState(now, 'DRAFT'));
 
-  if (!config) {
+  if (!workflow) {
     return (
       <>
         <StatusBar style="dark" />
         <ArmTriggerScreen
           now={now}
           onArm={(chosen) => {
-            setConfig(chosen);
+            setWorkflow(chosen);
             setState((s) => ({ ...s, status: 'ACTIVE', lastCheckInAt: Date.now() }));
           }}
         />
@@ -47,7 +41,7 @@ export default function App() {
         ownerName="Jo"
         triggerName="If I go quiet"
         status={state.status as TriggerStatus}
-        config={config ?? DEFAULT_CONFIG}
+        workflow={workflow ?? STEADY}
         state={state}
         now={now}
         vaultCount={0}
@@ -59,4 +53,4 @@ export default function App() {
   );
 }
 
-export { milestones };
+export { plan };

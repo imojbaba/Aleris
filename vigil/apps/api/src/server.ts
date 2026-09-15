@@ -18,7 +18,7 @@ export async function buildServer() {
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
 
   const repo = new MemoryRepo();
-  await registerRoutes(app, { repo, now: () => Date.now() });
+  await registerRoutes(app, { repo, tokens: nodeTokens, now: () => Date.now() });
 
   const engine = new ReleaseEngine({
     repo,

@@ -1,4 +1,4 @@
-import type { Channel, TriggerConfig, TriggerState, Attestation } from '@vigil/core';
+import type { Channel, Workflow, TriggerState } from '@vigil/core';
 
 /**
  * Ports. The release engine talks only to these, never to Prisma or a provider
@@ -17,7 +17,9 @@ export interface TriggerRecord {
   id: string;
   userId: string;
   name: string;
-  config: TriggerConfig;
+  /** The workflow the user wrote. The engine never second-guesses it — it only
+   *  refuses to go faster than the floor and never delivers in silence. */
+  workflow: Workflow;
   state: TriggerState;
 }
 
@@ -60,8 +62,8 @@ export interface TriggerRepository {
   deliveriesFor(triggerId: string): Promise<DeliveryRecord[]>;
   createDelivery(d: Omit<DeliveryRecord, 'status'> & { status?: DeliveryRecord['status'] }): Promise<DeliveryRecord>;
   markDeliveryDispatched(deliveryId: string, at: number): Promise<void>;
-  recordAttestationToken(triggerId: string, recipientId: string, tokenHash: string): Promise<void>;
-  recordNudge(triggerId: string, step: number, channel: Channel, at: number): Promise<void>;
+  recordAnswerToken(triggerId: string, contactId: string, tokenHash: string): Promise<void>;
+  recordAttempt(triggerId: string, stepId: string, occurrence: number, channel: Channel, at: number): Promise<void>;
   appendAudit(userId: string, kind: string, summary: string, detail?: unknown): Promise<void>;
 }
 
@@ -69,10 +71,9 @@ export interface OutboundMessage {
   channel: Channel;
   to: { email?: string; phone?: string; userId?: string };
   template:
-    | 'CHECK_IN_REMINDER'
-    | 'ESCALATION'
-    | 'FINAL_WARNING'
-    | 'VERIFIER_QUESTION'
+    | 'REMIND_OWNER'
+    | 'WELLBEING_CHECK'
+    | 'CONFIRMATION_REQUEST'
     | 'DELIVERY';
   variables: Record<string, string>;
 }

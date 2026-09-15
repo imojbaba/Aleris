@@ -17,8 +17,8 @@ import { palette, type Palette } from './tokens.js';
  */
 
 export type TriggerStatus =
-  | 'DRAFT' | 'ACTIVE' | 'GRACE' | 'ESCALATING'
-  | 'VERIFICATION_HOLD' | 'RELEASING' | 'RELEASED' | 'PAUSED' | 'CANCELLED';
+  | 'DRAFT' | 'ACTIVE' | 'REMINDING' | 'WELLBEING_CHECK'
+  | 'AWAITING_CONFIRMATION' | 'DELIVERING' | 'DELIVERED' | 'PAUSED' | 'CANCELLED';
 
 export interface StatusPresentation {
   /** Two or three words, shown large. */
@@ -42,28 +42,33 @@ export const STATUS: Record<TriggerStatus, StatusPresentation> = {
     detail: 'Nobody has been contacted. Nothing has been sent.',
     tone: 'calm', accent: 'sage', flame: 'steady',
   },
-  GRACE: {
-    headline: 'We missed you',
+  /**
+   * Covers every step of the owner's own ladder — the emails, the WhatsApp, the
+   * phone call. One status, because from the owner's side they are one thing:
+   * we are trying to reach you, and nobody else knows.
+   */
+  REMINDING: {
+    headline: 'Trying to reach you',
     detail: 'Only you have heard from us. Nobody else knows anything.',
     tone: 'attention', accent: 'amber', flame: 'dimming',
   },
-  ESCALATING: {
-    headline: 'Trying to reach you',
+  WELLBEING_CHECK: {
+    headline: 'We’ve asked if you’re alright',
     detail:
-      'We are trying every way you gave us. If you named anyone to check on you, they have been asked whether you are alright — nothing more.',
+      'The people you named have been asked one question — whether you are alright. They were told nothing else. Any of them saying you are fine stops this.',
     tone: 'urgent', accent: 'ember', flame: 'pulsing',
   },
-  VERIFICATION_HOLD: {
+  AWAITING_CONFIRMATION: {
     headline: 'Waiting, before anything is sent',
     detail: 'Nothing has gone out. Opening this app right now stops all of it.',
     tone: 'urgent', accent: 'ember', flame: 'pulsing',
   },
-  RELEASING: {
+  DELIVERING: {
     headline: 'Delivering',
     detail: 'The people you chose are being contacted now.',
     tone: 'done', accent: 'ember', flame: 'low',
   },
-  RELEASED: {
+  DELIVERED: {
     headline: 'Delivered',
     detail: 'What you left has reached the people you left it for.',
     tone: 'done', accent: 'inkSoft', flame: 'out',

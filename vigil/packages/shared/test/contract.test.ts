@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-  Base64Url, TriggerConfigSchema, CreateVaultRequest, CreateVaultItemRequest,
+  Base64Url, WorkflowSchema, CreateVaultRequest, CreateVaultItemRequest,
   CreateRecipientRequest, GrantSchema, CreateGrantRequest, RegisterRequest,
-  StoredIdentitySchema, AttestationRequest,
+  StoredIdentitySchema, WellbeingAnswerRequest, ClaimVerifyRequest, ClaimBundle,
 } from '../src/index.js';
 
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -64,38 +64,76 @@ describe('the contract carries no plaintext', () => {
   });
 });
 
-describe('trigger config', () => {
+describe('the workflow contract', () => {
+  const step = (over: Record<string, unknown>) => ({ id: 'a', ...over });
   const valid = {
-    checkInIntervalDays: 30,
-    graceDays: 14,
-    escalation: [{ afterDays: 0, channels: ['PUSH', 'EMAIL'] }],
-    verification: { verifierIds: [], requiredAttestations: 0, policy: 'SILENCE_CONFIRMS', holdDays: 7 },
+    checkInEveryDays: 30,
+    steps: [
+      step({ kind: 'REMIND_OWNER', channels: ['EMAIL'], times: 3, everyHours: 24 }),
+      { id: 'b', kind: 'REMIND_OWNER', channels: ['SMS'], times: 1, everyHours: 24 },
+      { id: 'c', kind: 'FIRE' },
+    ],
   };
 
-  it('accepts a well-formed config', () => {
-    expect(TriggerConfigSchema.safeParse(valid).success).toBe(true);
+  it('accepts a well-formed workflow', () => {
+    expect(WorkflowSchema.safeParse(valid).success).toBe(true);
   });
 
-  it('rejects an empty escalation ladder at the wire boundary', () => {
-    expect(TriggerConfigSchema.safeParse({ ...valid, escalation: [] }).success).toBe(false);
+  it('accepts every step kind the product offers', () => {
+    const all = {
+      checkInEveryDays: 30,
+      steps: [
+        { id: 'a', kind: 'REMIND_OWNER', channels: ['EMAIL'], times: 2, everyHours: 24, message: 'Hi' },
+        { id: 'b', kind: 'WAIT', hours: 24 },
+        {
+          id: 'c', kind: 'WELLBEING_CHECK', contactIds: [uuid(1)], channels: ['SMS'],
+          waitHours: 48, requireOtp: true, script: 'Is he alright?',
+        },
+        { id: 'd', kind: 'REQUIRE_CONFIRMATION', from: [uuid(1)], count: 1, timeoutHours: 72, onTimeout: 'HOLD' },
+        { id: 'e', kind: 'FIRE' },
+      ],
+    };
+    expect(WorkflowSchema.safeParse(all).success).toBe(true);
   });
 
-  it('rejects a step with no channels', () => {
-    expect(TriggerConfigSchema.safeParse({
-      ...valid, escalation: [{ afterDays: 0, channels: [] }],
+  it('rejects an unknown step kind rather than silently dropping it', () => {
+    const sneaky = { ...valid, steps: [...valid.steps, { id: 'x', kind: 'DELETE_EVERYTHING' }] };
+    expect(WorkflowSchema.safeParse(sneaky).success).toBe(false);
+  });
+
+  it('rejects a step with no channels, no repeats, or a zero gap', () => {
+    for (const bad of [
+      { kind: 'REMIND_OWNER', channels: [], times: 1, everyHours: 24 },
+      { kind: 'REMIND_OWNER', channels: ['EMAIL'], times: 0, everyHours: 24 },
+      { kind: 'REMIND_OWNER', channels: ['EMAIL'], times: 1, everyHours: 0 },
+    ]) {
+      expect(WorkflowSchema.safeParse({ ...valid, steps: [step(bad), { id: 'z', kind: 'FIRE' }] }).success)
+        .toBe(false);
+    }
+  });
+
+  it('rejects an unknown channel and an out-of-range interval', () => {
+    expect(WorkflowSchema.safeParse({
+      ...valid, steps: [step({ kind: 'REMIND_OWNER', channels: ['CARRIER_PIGEON'], times: 1, everyHours: 24 }), { id: 'z', kind: 'FIRE' }],
+    }).success).toBe(false);
+    expect(WorkflowSchema.safeParse({ ...valid, checkInEveryDays: 0 }).success).toBe(false);
+    expect(WorkflowSchema.safeParse({ ...valid, checkInEveryDays: 5000 }).success).toBe(false);
+  });
+
+  it('caps the owner-written script, which is rendered into a stranger’s inbox', () => {
+    const long = 'x'.repeat(1001);
+    expect(WorkflowSchema.safeParse({
+      ...valid,
+      steps: [
+        { id: 'c', kind: 'WELLBEING_CHECK', contactIds: [uuid(1)], channels: ['SMS'], waitHours: 1, script: long },
+        { id: 'z', kind: 'FIRE' },
+      ],
     }).success).toBe(false);
   });
 
-  it('rejects a non-positive or absurd check-in interval', () => {
-    expect(TriggerConfigSchema.safeParse({ ...valid, checkInIntervalDays: 0 }).success).toBe(false);
-    expect(TriggerConfigSchema.safeParse({ ...valid, checkInIntervalDays: -5 }).success).toBe(false);
-    expect(TriggerConfigSchema.safeParse({ ...valid, checkInIntervalDays: 5000 }).success).toBe(false);
-  });
-
-  it('rejects an unknown channel', () => {
-    expect(TriggerConfigSchema.safeParse({
-      ...valid, escalation: [{ afterDays: 0, channels: ['CARRIER_PIGEON'] }],
-    }).success).toBe(false);
+  it('bounds workflow size, so nobody can post a million-step trigger', () => {
+    const many = Array.from({ length: 41 }, (_, i) => ({ id: `s${i}`, kind: 'WAIT', hours: 1 }));
+    expect(WorkflowSchema.safeParse({ ...valid, steps: many }).success).toBe(false);
   });
 });
 
@@ -159,15 +197,49 @@ describe('grants', () => {
   });
 });
 
-describe('attestation', () => {
+describe('the wellbeing answer', () => {
   it('takes a token and one of three verdicts', () => {
-    expect(AttestationRequest.safeParse({ token: 'x'.repeat(20), verdict: 'ALIVE' }).success).toBe(true);
-    expect(AttestationRequest.safeParse({ token: 'short', verdict: 'ALIVE' }).success).toBe(false);
-    expect(AttestationRequest.safeParse({ token: 'x'.repeat(20), verdict: 'MAYBE' }).success).toBe(false);
+    expect(WellbeingAnswerRequest.safeParse({ token: 'x'.repeat(20), verdict: 'ALIVE' }).success).toBe(true);
+    expect(WellbeingAnswerRequest.safeParse({ token: 'short', verdict: 'ALIVE' }).success).toBe(false);
+    expect(WellbeingAnswerRequest.safeParse({ token: 'x'.repeat(20), verdict: 'MAYBE' }).success).toBe(false);
   });
 
-  it('does not let a verifier send anything about the vault', () => {
-    const shape = Object.keys(AttestationRequest.shape);
-    expect(shape.sort()).toEqual(['note', 'token', 'verdict']);
+  it('gives the person answering no way to ask about the vault', () => {
+    expect(Object.keys(WellbeingAnswerRequest.shape).sort()).toEqual(['note', 'token', 'verdict']);
+  });
+});
+
+describe('the redeem flow contract', () => {
+  it('carries the recipient’s ephemeral public key, never a private one', () => {
+    const shape = Object.keys(ClaimVerifyRequest.shape);
+    expect(shape).toContain('claimPublicKey');
+    for (const forbidden of ['privateKey', 'claimPrivateKey', 'answer', 'vaultKey']) {
+      expect(shape, forbidden).not.toContain(forbidden);
+    }
+  });
+
+  /**
+   * The answer to the owner's question must never be transmitted. It is key
+   * material derived on the recipient's device — if it appeared in a request
+   * body, the server could derive the same key and the guarantee would be gone.
+   */
+  it('has nowhere to put the answer to the owner’s question', () => {
+    const bundle = Object.keys(ClaimBundle.shape);
+    expect(bundle).toContain('question');
+    expect(bundle).toContain('proofSalt');
+    for (const forbidden of ['answer', 'answerHash', 'expectedAnswer']) {
+      expect(bundle, forbidden).not.toContain(forbidden);
+      expect(Object.keys(ClaimVerifyRequest.shape), forbidden).not.toContain(forbidden);
+    }
+  });
+
+  it('returns shares as sealed blobs, and says who has not released yet', () => {
+    const parsed = ClaimBundle.safeParse({
+      deliveryId: uuid(1), ownerName: 'Jo',
+      grant: { v: 1, mode: 'RECIPIENT_KEYED', grantId: 'g1', sealedVaultKey: 'aGVsbG8' },
+      relayedShares: [{ custodianId: 'service', sealed: 'aGVsbG8' }],
+      awaiting: [{ custodianId: 'ray', displayName: 'Ray' }],
+    });
+    expect(parsed.success).toBe(true);
   });
 });

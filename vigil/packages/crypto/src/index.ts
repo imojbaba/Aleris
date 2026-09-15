@@ -6,3 +6,4 @@ export * from './shamir.js';
 export * from './recipient.js';
 export * from './envelope.js';
 export * from './release.js';
+export * from './claim.js';

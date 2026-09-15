@@ -32,7 +32,7 @@ export function TimelineRail({ events, formatDate = defaultFormat }: Props) {
     <View>
       {events.map((event, i) => {
         const last = i === events.length - 1;
-        const isRelease = event.kind === 'RELEASE';
+        const isRelease = event.kind === 'DELIVER';
         const colour = event.involvesOthers ? palette.ember : palette.inkFaint;
 
         return (

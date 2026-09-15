@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, View, Pressable, SafeAreaView } from 'react-native';
 import {
-  PRESETS, previewTimeline, summariseFuse, validateConfig, isValid, type TriggerConfig,
+  TEMPLATES, projectTimeline, summariseWorkflow, validateWorkflow, isValidWorkflow,
+  describeStep, type Workflow,
 } from '@vigil/core';
 import { palette, space, radius } from '../theme/tokens.js';
 import { Type } from '../components/Type.js';
@@ -23,19 +24,19 @@ import { TimelineRail } from '../components/TimelineRail.js';
 
 interface Props {
   now: number;
-  onArm: (config: TriggerConfig) => void;
+  onArm: (workflow: Workflow) => void;
 }
 
 export function ArmTriggerScreen({ now, onArm }: Props) {
-  const [presetId, setPresetId] = useState(PRESETS[1]!.id);
-  const config = useMemo(
-    () => PRESETS.find((p) => p.id === presetId)!.config,
-    [presetId],
+  const [templateId, setTemplateId] = useState(TEMPLATES[1]!.id);
+  const workflow = useMemo(
+    () => TEMPLATES.find((t) => t.id === templateId)!.workflow,
+    [templateId],
   );
-  const issues = useMemo(() => validateConfig(config), [config]);
+  const issues = useMemo(() => validateWorkflow(workflow), [workflow]);
   const errors = issues.filter((i) => i.severity === 'error');
   const warnings = issues.filter((i) => i.severity === 'warning');
-  const timeline = useMemo(() => previewTimeline(config, now), [config, now]);
+  const timeline = useMemo(() => projectTimeline(workflow, now), [workflow, now]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }}>
@@ -47,12 +48,12 @@ export function ArmTriggerScreen({ now, onArm }: Props) {
         </Type>
 
         <View style={{ marginTop: space.xl, gap: space.md }}>
-          {PRESETS.map((preset) => {
-            const selected = preset.id === presetId;
+          {TEMPLATES.map((preset) => {
+            const selected = preset.id === templateId;
             return (
               <Pressable
                 key={preset.id}
-                onPress={() => setPresetId(preset.id)}
+                onPress={() => setTemplateId(preset.id)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
               >
@@ -70,7 +71,7 @@ export function ArmTriggerScreen({ now, onArm }: Props) {
         <View style={{ marginTop: space.xxl }}>
           <Type variant="label" color={palette.inkFaint}>Exactly what would happen</Type>
           <Type variant="title" style={{ marginTop: space.xs, marginBottom: space.lg }}>
-            {summariseFuse(config)}
+            {summariseWorkflow(workflow)}
           </Type>
           <TimelineRail events={timeline} />
         </View>
@@ -79,7 +80,7 @@ export function ArmTriggerScreen({ now, onArm }: Props) {
           <Card tone="sunken" style={{ marginTop: space.xxl }}>
             <Type variant="label" color={palette.amber}>Worth thinking about</Type>
             {warnings.map((w) => (
-              <Type key={w.field} variant="body" color={palette.inkSoft} style={{ marginTop: space.sm }}>
+              <Type key={w.at} variant="body" color={palette.inkSoft} style={{ marginTop: space.sm }}>
                 {w.message}
               </Type>
             ))}
@@ -90,7 +91,7 @@ export function ArmTriggerScreen({ now, onArm }: Props) {
           <Card tone="sunken" style={{ marginTop: space.lg }}>
             <Type variant="label" color={palette.alert}>This can’t be armed yet</Type>
             {errors.map((e) => (
-              <Type key={e.field} variant="body" color={palette.inkSoft} style={{ marginTop: space.sm }}>
+              <Type key={e.at} variant="body" color={palette.inkSoft} style={{ marginTop: space.sm }}>
                 {e.message}
               </Type>
             ))}
@@ -98,12 +99,12 @@ export function ArmTriggerScreen({ now, onArm }: Props) {
         )}
 
         <Pressable
-          onPress={() => onArm(config)}
-          disabled={!isValid(config)}
+          onPress={() => onArm(workflow)}
+          disabled={!isValidWorkflow(workflow)}
           accessibilityRole="button"
           style={{
             marginTop: space.xxl, height: 58, borderRadius: radius.pill,
-            backgroundColor: isValid(config) ? palette.ink : palette.hairline,
+            backgroundColor: isValidWorkflow(workflow) ? palette.ink : palette.hairline,
             alignItems: 'center', justifyContent: 'center',
           }}
         >

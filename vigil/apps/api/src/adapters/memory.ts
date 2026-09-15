@@ -21,9 +21,27 @@ export class MemoryRepo implements TriggerRepository {
   recipients = new Map<string, RecipientRecord>();
   owners = new Map<string, { id: string; email: string; displayName: string }>();
   deliveries: DeliveryRecord[] = [];
-  nudges: { triggerId: string; step: number; channel: string; at: number }[] = [];
-  attestationTokens: { triggerId: string; recipientId: string; tokenHash: string }[] = [];
+  attempts: { triggerId: string; stepId: string; occurrence: number; channel: string; at: number }[] = [];
+  answerTokens: { triggerId: string; contactId: string; tokenHash: string }[] = [];
   audit: { userId: string; kind: string; summary: string; detail?: unknown }[] = [];
+
+  /**
+   * Custody shares released to a recipient's claim session.
+   *
+   * Each entry is a blob sealed to an ephemeral public key that exists only in
+   * the recipient's browser. We hold these, we forward these, and we cannot
+   * read a single one of them.
+   */
+  relayedShares: { deliveryId: string; custodianId: string; sealed: string }[] = [];
+  /** Custodians who have not released for a delivery yet, for the "waiting on" UI. */
+  custodiansFor = new Map<string, { custodianId: string; displayName: string }[]>();
+
+  awaitingCustodians(deliveryId: string) {
+    const released = new Set(
+      this.relayedShares.filter((r) => r.deliveryId === deliveryId).map((r) => r.custodianId),
+    );
+    return (this.custodiansFor.get(deliveryId) ?? []).filter((c) => !released.has(c.custodianId));
+  }
 
   /** Set to make createDelivery throw once, simulating a mid-release crash. */
   failNextDelivery = false;
@@ -80,12 +98,12 @@ export class MemoryRepo implements TriggerRepository {
     }
   }
 
-  async recordAttestationToken(triggerId: string, recipientId: string, tokenHash: string) {
-    this.attestationTokens.push({ triggerId, recipientId, tokenHash });
+  async recordAnswerToken(triggerId: string, contactId: string, tokenHash: string) {
+    this.answerTokens.push({ triggerId, contactId, tokenHash });
   }
 
-  async recordNudge(triggerId: string, step: number, channel: string, at: number) {
-    this.nudges.push({ triggerId, step, channel, at });
+  async recordAttempt(triggerId: string, stepId: string, occurrence: number, channel: string, at: number) {
+    this.attempts.push({ triggerId, stepId, occurrence, channel, at });
   }
 
   async appendAudit(userId: string, kind: string, summary: string, detail?: unknown) {
