@@ -90,7 +90,7 @@ export function SetupScreen({ vigil }: { vigil: Vigil }) {
                 padding: space.lg, marginBottom: space.xl,
               }}
             >
-              <Type variant="label" color={palette.amber}>Read this part</Type>
+              <Type variant="label" color={palette.amberText}>Read this part</Type>
               <Type variant="body" color={palette.inkSoft} style={{ marginTop: space.sm }}>
                 There is no “forgot passphrase”. Not a hard one — there is no way at all. If you lose
                 it, everything in your vaults is gone, including for the people you leave it to.

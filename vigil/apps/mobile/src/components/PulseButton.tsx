@@ -31,8 +31,16 @@ interface Props {
 
 export function PulseButton({
   onComplete,
-  label = "I'm here",
-  holdLabel = 'Hold…',
+  /**
+   * The visible label has to say HOLD.
+   *
+   * It read "I'm here" and only the accessibility label mentioned holding, so a
+   * sighted user tapped the most important control in the product, nothing
+   * happened, and they concluded it was broken. An affordance that exists only
+   * for screen readers is not an affordance.
+   */
+  label = 'Hold to say you’re here',
+  holdLabel = 'Keep holding…',
   disabled = false,
 }: Props) {
   const fill = useRef(new Animated.Value(0)).current;
@@ -104,7 +112,7 @@ export function PulseButton({
             backgroundColor: holding ? palette.ember : palette.sage,
           }}
         />
-        <Type variant="heading" face="sans" color={palette.ink}>
+        <Type variant="body" face="sans" color={palette.ink}>
           {holding ? holdLabel : label}
         </Type>
       </View>

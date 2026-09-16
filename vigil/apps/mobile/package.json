@@ -27,7 +27,8 @@
     "expo-font": "~13.0.4",
     "expo-splash-screen": "~0.29.18",
     "@expo-google-fonts/newsreader": "^0.4.1",
-    "@expo-google-fonts/ibm-plex-sans": "^0.4.1"
+    "@expo-google-fonts/ibm-plex-sans": "^0.4.1",
+    "react-native-svg": "15.8.0"
   },
   "devDependencies": {
     "@types/react": "~18.3.12",

@@ -35,7 +35,7 @@ export function ComposeScreen({ vigil, onDone }: { vigil: Vigil; onDone: () => v
               backgroundColor: palette.sageSoft, alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <Type variant="title" color={palette.sage}>✓</Type>
+            <Type variant="title" color={palette.sageText}>✓</Type>
           </View>
           <Type variant="title" center style={{ marginTop: space.lg }}>Sealed.</Type>
           <Type variant="body" center color={palette.inkSoft} style={{ marginTop: space.sm, maxWidth: 300 }}>

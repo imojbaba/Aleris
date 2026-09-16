@@ -29,9 +29,11 @@ interface Props {
   prepare: (base: Workflow) => Workflow;
   contactNames: Record<string, string>;
   onAddPeople: () => void;
+  /** Absent on first run, when there is nothing to go back to. */
+  onBack?: () => void;
 }
 
-export function ArmTriggerScreen({ now, onArm, prepare, contactNames, onAddPeople }: Props) {
+export function ArmTriggerScreen({ now, onArm, prepare, contactNames, onAddPeople, onBack }: Props) {
   const [templateId, setTemplateId] = useState(TEMPLATES[1]!.id);
   const workflow = useMemo(
     () => prepare(TEMPLATES.find((t) => t.id === templateId)!.workflow),
@@ -45,6 +47,11 @@ export function ArmTriggerScreen({ now, onArm, prepare, contactNames, onAddPeopl
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }}>
       <ScrollView contentContainerStyle={{ padding: space.xl, paddingBottom: space.huge }}>
+        {onBack && (
+          <Pressable onPress={onBack} accessibilityRole="button" style={{ marginBottom: space.lg }}>
+            <Type variant="caption" face="sans" color={palette.inkFaint}>← Back</Type>
+          </Pressable>
+        )}
         <Type variant="title">How will we know?</Type>
         <Type variant="body" color={palette.inkSoft} style={{ marginTop: space.sm }}>
           Choose how often you’ll check in. You can change this whenever you like, and pause it
@@ -82,7 +89,7 @@ export function ArmTriggerScreen({ now, onArm, prepare, contactNames, onAddPeopl
 
         {warnings.length > 0 && (
           <Card tone="sunken" style={{ marginTop: space.xxl }}>
-            <Type variant="label" color={palette.amber}>Worth thinking about</Type>
+            <Type variant="label" color={palette.amberText}>Worth thinking about</Type>
             {warnings.map((w) => (
               <Type key={w.at} variant="body" color={palette.inkSoft} style={{ marginTop: space.sm }}>
                 {w.message}

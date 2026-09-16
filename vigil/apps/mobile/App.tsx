@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useVigilFonts } from './src/theme/fonts.js';
 import { palette } from './src/theme/tokens.js';
 import { useVigil } from './src/store.js';
+import { WhyScreen } from './src/screens/WhyScreen.js';
 import { SetupScreen } from './src/screens/SetupScreen.js';
 import { PeopleScreen } from './src/screens/PeopleScreen.js';
 import { ArmTriggerScreen } from './src/screens/ArmTriggerScreen.js';
@@ -26,6 +27,8 @@ export default function App() {
   const fonts = useVigilFonts();
   const vigil = useVigil();
   const [route, setRoute] = useState<Route | null>(null);
+  /** Shown once, before anything is asked of a first-time visitor. */
+  const [introDone, setIntroDone] = useState(false);
 
   const contactNames = useMemo(
     () => Object.fromEntries(vigil.data.people.map((p) => [p.id, p.name])),
@@ -54,6 +57,10 @@ export default function App() {
   const chrome = <StatusBar style="dark" />;
 
   if (!vigil.unlocked) {
+    // A returning user knows what this is; only a new one needs the why.
+    if (!vigil.hasAccount && !introDone) {
+      return <>{chrome}<WhyScreen onBegin={() => setIntroDone(true)} /></>;
+    }
     return <>{chrome}<SetupScreen vigil={vigil} /></>;
   }
 
@@ -87,6 +94,7 @@ export default function App() {
             prepare={vigil.suggestedWorkflow}
             contactNames={contactNames}
             onAddPeople={() => setRoute('people')}
+            onBack={vigil.data.workflow ? () => setRoute('home') : undefined}
             onArm={(workflow) => { vigil.arm(workflow); setRoute('home'); }}
           />
         </>

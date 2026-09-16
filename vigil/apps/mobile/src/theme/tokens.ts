@@ -24,11 +24,29 @@ export const palette = {
   /** Deep warm near-black. Ink, not #000 — pure black on warm paper reads as a hole. */
   ink: '#1F1A15',
   inkSoft: '#4A4239',
-  inkFaint: '#8A7F71',
+  /**
+   * Darkened from #8A7F71, which measured 3.67:1 on paper and 3.37:1 on the
+   * sunken surface — below the 4.5:1 WCAG AA needs for text at this size, and
+   * it carries almost every label and caption in the app. A warm grey that is
+   * merely pretty is not a defensible choice for the smallest type in a product
+   * a lot of people will read at arm's length, at night, upset.
+   */
+  inkFaint: '#746B5F',
   hairline: '#E4DACA',
 
   /** The ember. The single accent, used for the flame, the pulse, and nothing else. */
   ember: '#C25A1E',
+  /**
+   * Text variants of the three signal colours.
+   *
+   * The accents above are tuned for FILLS — a flame, a border, a 3px rule —
+   * where 3:1 is the bar. As type at label size they measured 4.12, 4.46 and
+   * 3.05 against paper, so all three failed. Rather than dull the identity by
+   * darkening the accents themselves, the type gets its own cut of each hue.
+   */
+  emberText: '#AF511B',
+  sageText: '#56735D',
+  amberText: '#8A6508',
   emberSoft: '#E8894F',
   emberGlow: '#FBE3D2',
 
@@ -50,7 +68,14 @@ export const darkPalette = {
   paperSunken: '#0E0C09',
   ink: '#F5EFE5',
   inkSoft: '#C2B8A8',
-  inkFaint: '#8A7F71',
+  /**
+   * Darkened from #8A7F71, which measured 3.67:1 on paper and 3.37:1 on the
+   * sunken surface — below the 4.5:1 WCAG AA needs for text at this size, and
+   * it carries almost every label and caption in the app. A warm grey that is
+   * merely pretty is not a defensible choice for the smallest type in a product
+   * a lot of people will read at arm's length, at night, upset.
+   */
+  inkFaint: '#746B5F',
   hairline: '#2E2820',
   ember: '#E8894F',
   emberSoft: '#C25A1E',

@@ -16,11 +16,12 @@ import type { OutboxMessage } from '../lib/outbox.js';
  * this product must never do is tell a real family that someone has died.
  */
 
-const TONE: Record<OutboxMessage['kind'], { label: string; colour: string }> = {
-  REMIND_OWNER: { label: 'To you', colour: palette.inkFaint },
-  WELLBEING_CHECK: { label: 'Wellbeing check', colour: palette.amber },
-  CONFIRMATION: { label: 'Asking to confirm', colour: palette.amber },
-  DELIVERY: { label: 'Delivered', colour: palette.ember },
+/** `edge` is a 3px rule (a fill); `text` is the label beside it. Different bars. */
+const TONE: Record<OutboxMessage['kind'], { label: string; edge: string; text: string }> = {
+  REMIND_OWNER: { label: 'To you', edge: palette.inkFaint, text: palette.inkFaint },
+  WELLBEING_CHECK: { label: 'Wellbeing check', edge: palette.amber, text: palette.amberText },
+  CONFIRMATION: { label: 'Asking to confirm', edge: palette.amber, text: palette.amberText },
+  DELIVERY: { label: 'Delivered', edge: palette.ember, text: palette.emberText },
 };
 
 export function OutboxScreen({ vigil, onBack }: { vigil: Vigil; onBack: () => void }) {
@@ -48,9 +49,9 @@ export function OutboxScreen({ vigil, onBack }: { vigil: Vigil; onBack: () => vo
             {messages.map((m) => {
               const tone = TONE[m.kind];
               return (
-                <Card key={m.id} tone="quiet" accent={tone.colour}>
+                <Card key={m.id} tone="quiet" accent={tone.edge}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Type variant="label" color={tone.colour}>{tone.label}</Type>
+                    <Type variant="label" color={tone.text}>{tone.label}</Type>
                     <Type variant="caption" color={palette.inkFaint}>{fmt(m.at)}</Type>
                   </View>
                   <Type variant="caption" color={palette.inkFaint} style={{ marginTop: space.xs }}>

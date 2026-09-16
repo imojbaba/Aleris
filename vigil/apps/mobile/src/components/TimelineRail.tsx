@@ -33,7 +33,10 @@ export function TimelineRail({ events, formatDate = defaultFormat }: Props) {
       {events.map((event, i) => {
         const last = i === events.length - 1;
         const isRelease = event.kind === 'DELIVER';
-        const colour = event.involvesOthers ? palette.ember : palette.inkFaint;
+        // The mark is a fill (3:1 is the bar); the date beside it is type
+        // (4.5:1), so they cannot be the same value.
+        const mark = event.involvesOthers ? palette.ember : palette.inkFaint;
+        const colour = event.involvesOthers ? palette.emberText : palette.inkFaint;
 
         return (
           <View key={`${event.kind}-${event.at}-${i}`} style={{ flexDirection: 'row' }}>
@@ -45,8 +48,8 @@ export function TimelineRail({ events, formatDate = defaultFormat }: Props) {
                   height: isRelease ? 14 : 10,
                   borderRadius: radius.pill,
                   borderWidth: 2,
-                  borderColor: colour,
-                  backgroundColor: event.involvesOthers ? colour : palette.paper,
+                  borderColor: mark,
+                  backgroundColor: event.involvesOthers ? mark : palette.paper,
                   marginTop: 5,
                 }}
               />

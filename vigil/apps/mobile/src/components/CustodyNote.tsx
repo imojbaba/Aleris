@@ -25,7 +25,7 @@ export function CustodyNote({ description, recipientName, mode }: Props) {
   const strongest = mode === 'RECIPIENT_KEYED';
   return (
     <Card tone="quiet" accent={strongest ? palette.sage : palette.amber}>
-      <Type variant="label" color={strongest ? palette.sage : palette.amber}>
+      <Type variant="label" color={strongest ? palette.sageText : palette.amberText}>
         {strongest ? 'Sealed to them alone' : 'Split between people'}
       </Type>
       <Type variant="heading" face="sans" style={{ marginTop: space.xs }}>
