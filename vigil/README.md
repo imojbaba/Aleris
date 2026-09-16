@@ -34,8 +34,25 @@ pnpm install
 pnpm test          # 174 tests
 pnpm typecheck
 pnpm api:dev       # runs in memory; no database needed
-pnpm mobile:start
+pnpm mobile:start  # Expo — iOS, Android
+pnpm preview       # build the shareable single-file web preview
 ```
+
+### The preview build
+
+`pnpm preview` exports the real app for web and packages it as one
+self-contained HTML file with the eight type faces inlined — no asset paths to
+resolve, so it runs from any URL on any phone.
+
+It carries a **time machine**, because a dead man's trigger cannot be tested in
+real time: left alone, the honest answer to "does this work?" takes two months
+and a genuine disappearance. Winding the clock forward runs the real evaluator
+across the gap in six-hour ticks, exactly as the worker does, and every message
+it produces lands in an in-app outbox.
+
+Nothing leaves the device in a preview build. That is not a limitation to
+apologise for — the one thing a testing version of THIS product must never do
+is tell a real family that someone has died.
 
 ## The two ideas the product rests on
 

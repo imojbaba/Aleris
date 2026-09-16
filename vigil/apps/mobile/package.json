@@ -7,7 +7,8 @@
     "start": "expo start",
     "ios": "expo start --ios",
     "android": "expo start --android",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "preview": "expo export --platform web --output-dir .preview-build && node scripts/package-preview.mjs .preview-build ../../vigil-preview.html"
   },
   "dependencies": {
     "@vigil/core": "workspace:*",

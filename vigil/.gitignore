@@ -7,3 +7,5 @@ dist/
 coverage/
 *.tsbuildinfo
 .DS_Store
+.preview-build/
+vigil-preview.html

@@ -25,18 +25,22 @@ import { TimelineRail } from '../components/TimelineRail.js';
 interface Props {
   now: number;
   onArm: (workflow: Workflow) => void;
+  /** Fills each template's wellbeing check with the people already named. */
+  prepare: (base: Workflow) => Workflow;
+  contactNames: Record<string, string>;
+  onAddPeople: () => void;
 }
 
-export function ArmTriggerScreen({ now, onArm }: Props) {
+export function ArmTriggerScreen({ now, onArm, prepare, contactNames, onAddPeople }: Props) {
   const [templateId, setTemplateId] = useState(TEMPLATES[1]!.id);
   const workflow = useMemo(
-    () => TEMPLATES.find((t) => t.id === templateId)!.workflow,
-    [templateId],
+    () => prepare(TEMPLATES.find((t) => t.id === templateId)!.workflow),
+    [templateId, prepare],
   );
   const issues = useMemo(() => validateWorkflow(workflow), [workflow]);
   const errors = issues.filter((i) => i.severity === 'error');
   const warnings = issues.filter((i) => i.severity === 'warning');
-  const timeline = useMemo(() => projectTimeline(workflow, now), [workflow, now]);
+  const timeline = useMemo(() => projectTimeline(workflow, now, contactNames), [workflow, now, contactNames]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.paper }}>
@@ -95,6 +99,21 @@ export function ArmTriggerScreen({ now, onArm }: Props) {
                 {e.message}
               </Type>
             ))}
+            {/* The commonest blocker by far is having named nobody. A refusal
+                that does not offer the way out is only half a product. */}
+            {errors.some((e) => /asks nobody|confirmation from nobody/.test(e.message)) && (
+              <View style={{ marginTop: space.lg }}>
+                <Pressable
+                  onPress={onAddPeople}
+                  style={{
+                    height: 48, borderRadius: radius.pill, backgroundColor: palette.ink,
+                    alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Type variant="body" face="sans" color={palette.paper}>Name someone first</Type>
+                </Pressable>
+              </View>
+            )}
           </Card>
         )}
 

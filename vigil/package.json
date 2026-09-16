@@ -11,7 +11,8 @@
     "test": "pnpm -r run test",
     "typecheck": "pnpm -r run typecheck",
     "api:dev": "pnpm --filter @vigil/api dev",
-    "mobile:start": "pnpm --filter @vigil/mobile start"
+    "mobile:start": "pnpm --filter @vigil/mobile start",
+    "preview": "pnpm --filter @vigil/mobile run preview"
   },
   "devDependencies": {
     "typescript": "~5.9.2",
