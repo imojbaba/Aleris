@@ -52,10 +52,10 @@ model Trigger {
   name   String
   status TriggerStatus @default(DRAFT)
 
-  // Config is stored as JSON and validated by @vigil/shared on the way in. It
-  // changes shape as the product learns; the state machine in @vigil/core is
-  // the single reader.
-  config Json
+  // The workflow the user wrote, as JSON. Validated by @vigil/shared on the way
+  // in and by @vigil/core's validateWorkflow before it can be stored at all, so
+  // an unsafe trigger cannot exist in this table whatever client sent it.
+  workflow Json
 
   lastCheckInAt DateTime
   statusSince   DateTime @default(now())
@@ -67,7 +67,8 @@ model Trigger {
 
   grants       Grant[]
   attestations Attestation[]
-  nudges       Nudge[]
+  attempts     Attempt[]
+  answerTokens AnswerToken[]
   deliveries   Delivery[]
   createdAt    DateTime @default(now())
 
@@ -78,11 +79,11 @@ model Trigger {
 enum TriggerStatus {
   DRAFT
   ACTIVE
-  GRACE
-  ESCALATING
-  VERIFICATION_HOLD
-  RELEASING
-  RELEASED
+  REMINDING
+  WELLBEING_CHECK
+  AWAITING_CONFIRMATION
+  DELIVERING
+  DELIVERED
   PAUSED
   CANCELLED
 }
@@ -191,19 +192,35 @@ enum GrantMode {
 }
 
 model Attestation {
-  id          String    @id @default(uuid())
-  triggerId   String
-  trigger     Trigger   @relation(fields: [triggerId], references: [id], onDelete: Cascade)
-  recipientId String
-  recipient   Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  id        String    @id @default(uuid())
+  triggerId String
+  trigger   Trigger   @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Recipient @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   verdict AttestationVerdict
-  note     String?
-  at       DateTime           @default(now())
+  note    String?
+  at      DateTime @default(now())
 
-  // Hash only. The token itself lives in the email we sent and nowhere else, so
-  // a database reader cannot mint an attestation on someone's behalf.
-  tokenHash String  @unique
+  // Whether they proved control of the address we wrote to.
+  otpVerified Boolean @default(false)
+
+  @@index([triggerId, at])
+}
+
+// One-time links sent to the people a workflow asks about the owner.
+//
+// Only the HASH is stored. The token itself exists in the message we sent and
+// nowhere else, so a reader of this database cannot answer on someone's behalf
+// — which matters, because a single "they're alive" halts the whole cascade and
+// a forged "they're gone" would help it along.
+model AnswerToken {
+  id        String   @id @default(uuid())
+  triggerId String
+  trigger   Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  contactId String
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
   usedAt    DateTime?
 
   @@index([triggerId])
@@ -215,18 +232,25 @@ enum AttestationVerdict {
   UNSURE
 }
 
-model Nudge {
-  id        String   @id @default(uuid())
-  triggerId String
-  trigger   Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
-  step      Int
-  channel   Channel
-  sentAt    DateTime @default(now())
-  // Provider-reported outcome. A hard bounce is a signal the owner may be
-  // unreachable rather than absent, and is surfaced to them on their next visit.
-  outcome   String?
+// One occurrence of one workflow step, actually carried out.
+//
+// This table IS the trigger's memory of what it has done: the evaluator reads
+// it back as `performed` and uses it to guarantee each step fires exactly once,
+// however often the worker runs or restarts.
+model Attempt {
+  id         String   @id @default(uuid())
+  triggerId  String
+  trigger    Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  stepId     String
+  occurrence Int
+  channel    Channel?
+  at         DateTime @default(now())
+  // Provider-reported outcome. A hard bounce means the owner may be
+  // UNREACHABLE rather than absent, and is surfaced to them, not acted on.
+  outcome    String?
 
-  @@index([triggerId, step])
+  @@unique([triggerId, stepId, occurrence, channel])
+  @@index([triggerId])
 }
 
 enum Channel {
@@ -246,13 +270,15 @@ model Delivery {
   recipientId String
   recipient   Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
 
-  status      DeliveryStatus @default(PENDING)
-  // Hash of the claim code. The code itself is generated at release, put into
+  status DeliveryStatus @default(PENDING)
+  // Hash of the claim token. The token itself is generated at release, put into
   // the delivery message, and never written down here.
-  claimCodeHash String?
-  dispatchedAt  DateTime?
-  claimedAt     DateTime?
-  createdAt     DateTime @default(now())
+  claimTokenHash String?
+  dispatchedAt   DateTime?
+  claimedAt      DateTime?
+  createdAt      DateTime @default(now())
+
+  relayedShares RelayedShare[]
 
   @@index([triggerId])
   @@index([status])
@@ -278,4 +304,23 @@ model AuditEvent {
   detail    Json?
 
   @@index([userId, at])
+}
+
+
+// A custody share released to one recipient's claim session.
+//
+// Each row is sealed to an ephemeral public key that exists only in that
+// recipient's browser. We store these, we forward these, and we cannot read a
+// single one of them — which is the whole reason the redeem flow is shaped this
+// way rather than the service simply handing over a key after an OTP.
+model RelayedShare {
+  id          String   @id @default(uuid())
+  deliveryId  String
+  delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  custodianId String
+  sealed      String
+  releasedAt  DateTime @default(now())
+
+  @@unique([deliveryId, custodianId])
+  @@index([deliveryId])
 }

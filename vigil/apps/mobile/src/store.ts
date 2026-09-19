@@ -6,10 +6,11 @@ import {
 } from '@vigil/core';
 import {
   createIdentity, unlockIdentity, createVault, openVault, encryptText, decryptText,
-  toB64u, type StoredIdentity,
+  generateKeyPair, toB64u, type StoredIdentity,
 } from '@vigil/crypto';
 import { load, save, clear } from './lib/storage.js';
 import { renderActions, type OutboxMessage } from './lib/outbox.js';
+import { createClient, isConnected } from './lib/api.js';
 
 /**
  * The app's state, and the time machine.
@@ -68,6 +69,15 @@ export function useVigil() {
   const [data, setData] = useState<Persisted>(() => load<Persisted>() ?? EMPTY);
   const [unlocked, setUnlocked] = useState(false);
   const [busy, setBusy] = useState(false);
+  /**
+   * Anything the server rejected or could not be told.
+   *
+   * Surfaced rather than swallowed: if the server does not know about a
+   * trigger, nothing will fire when the phone is off — which is the entire
+   * product failing silently, and the user has to be able to see it.
+   */
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const client = useRef(createClient());
   /** The master key never goes to storage; it lives here for the session only. */
   const masterKey = useRef<Uint8Array | null>(null);
 
@@ -89,6 +99,22 @@ export function useVigil() {
         masterKey.current = mk;
         setUnlocked(true);
         commit({ ...EMPTY, ownerName: name.trim(), ownerEmail: email.trim(), identity: stored });
+
+        // The server is handed the WRAPPED identity so a new phone can restore.
+        // It cannot open it: the passphrase never leaves this device.
+        if (client.current) {
+          try {
+            await client.current.register({
+              email: email.trim(),
+              displayName: name.trim(),
+              identity: stored,
+              publicKey: toB64u(generateKeyPair().publicKey),
+            });
+            setSyncError(null);
+          } catch (e) {
+            setSyncError((e as Error).message);
+          }
+        }
       } finally {
         setBusy(false);
       }
@@ -167,9 +193,41 @@ export function useVigil() {
   }, []);
 
   const arm = useCallback(
-    (workflow: Workflow) => {
+    async (workflow: Workflow) => {
       const t = now();
       commit({ ...data, workflow, trigger: freshState(t), lastEvaluatedAt: t, outbox: [] });
+
+      /**
+       * Tell the server, so the cascade can run while this phone is off.
+       *
+       * Recipients go up first, because a workflow referencing contact ids the
+       * server has never heard of is a workflow it cannot act on.
+       */
+      if (client.current) {
+        try {
+          const remoteIds: Record<string, string> = {};
+          for (const p of data.people) {
+            const r = await client.current.createRecipient({
+              displayName: p.name, email: p.email,
+            });
+            remoteIds[p.id] = r.id;
+          }
+          const remapped: Workflow = {
+            ...workflow,
+            steps: workflow.steps.map((step) =>
+              step.kind === 'WELLBEING_CHECK'
+                ? { ...step, contactIds: step.contactIds.map((id) => remoteIds[id] ?? id) }
+                : step.kind === 'REQUIRE_CONFIRMATION'
+                  ? { ...step, from: step.from.map((id) => remoteIds[id] ?? id) }
+                  : step,
+            ),
+          };
+          await client.current.createTrigger({ name: 'My trigger', workflow: remapped as never });
+          setSyncError(null);
+        } catch (e) {
+          setSyncError((e as Error).message);
+        }
+      }
     },
     [commit, data, now],
   );
@@ -266,7 +324,7 @@ export function useVigil() {
   );
 
   return {
-    data, view, unlocked, busy, now,
+    data, view, unlocked, busy, now, syncError, connected: isConnected,
     hasAccount: data.identity !== null,
     masterKeyPresent: masterKey.current !== null,
     createAccount, unlock, addPerson, removePerson, writeLetter, readLetter,

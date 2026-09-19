@@ -104,6 +104,15 @@ JWT_SECRET=<32+ random bytes>
 APP_BASE_URL=https://vigil.yourdomain.com
 ```
 
+With `DATABASE_URL` set the service runs on Postgres; without it, entirely in
+memory. Both are exercised by the same test suite, so memory mode is a real
+fallback rather than a fiction — `pnpm api:dev` needs nothing installed.
+
+The app stays in **preview** mode until `EXPO_PUBLIC_API_URL` is set, at which
+point it registers with the server and pushes recipients and triggers so the
+cascade can run while the phone is off. The device still holds every key and
+does every encryption; the server is told only what it needs in order to run.
+
 **Run the worker as its own process, not a thread of the API.** It is the only
 thing that can cause a delivery, and it should be restartable, observable and
 scalable on its own.
@@ -126,8 +135,10 @@ been bereaved.
 1. WhatsApp test number + templates ← **start now, it is the only clock you don't control**
 2. DNS on the sending subdomain ← propagation is the second slowest thing
 3. Neon + Fly, `DATABASE_URL` set
-4. Prisma adapter, migrations *(not yet written)*
-5. API client in the app *(not yet written)*
+4. `pnpm --filter @vigil/api prisma:push` — the adapter and schema are written
+   and tested against real Postgres
+5. Set `EXPO_PUBLIC_API_URL` in the app build — the client is written and tested
+   against the real routes
 6. Heartbeat, Sentry, first real send to your own number
 
 ## Before strangers, not friends

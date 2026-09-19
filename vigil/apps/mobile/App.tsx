@@ -95,7 +95,7 @@ export default function App() {
             contactNames={contactNames}
             onAddPeople={() => setRoute('people')}
             onBack={vigil.data.workflow ? () => setRoute('home') : undefined}
-            onArm={(workflow) => { vigil.arm(workflow); setRoute('home'); }}
+            onArm={(workflow) => { void vigil.arm(workflow); setRoute('home'); }}
           />
         </>
       );
@@ -113,7 +113,7 @@ export default function App() {
         prepare={vigil.suggestedWorkflow}
         contactNames={contactNames}
         onAddPeople={() => setRoute('people')}
-        onArm={(workflow) => { vigil.arm(workflow); setRoute('home'); }}
+        onArm={(workflow) => { void vigil.arm(workflow); setRoute('home'); }}
       /></>;
       return (
         <>{chrome}

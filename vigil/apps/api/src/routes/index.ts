@@ -10,7 +10,7 @@ import {
   checkIn as applyCheckIn, pause as applyPause, resume as applyResume, cancel as applyCancel,
   recordAttestation, freshState, type Workflow,
 } from '@vigil/core';
-import type { MemoryRepo } from '../adapters/memory.js';
+import type { AppStore } from '../domain/appStore.js';
 import type { Tokens } from '../domain/ports.js';
 
 /**
@@ -19,7 +19,7 @@ import type { Tokens } from '../domain/ports.js';
  */
 
 interface Ctx {
-  repo: MemoryRepo;
+  store: AppStore;
   tokens: Tokens;
   now: () => number;
 }
@@ -42,11 +42,32 @@ export async function registerRoutes(app: FastifyInstance, ctx: Ctx) {
   app.post('/v1/auth/register', async (req, reply) => {
     const parsed = RegisterRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply, parsed.error.issues);
-    const { email, displayName } = parsed.data;
-    const id = `user-${email}`;
-    ctx.repo.owners.set(id, { id, email, displayName });
-    await ctx.repo.appendAudit(id, 'ACCOUNT_CREATED', 'Account created.');
-    return reply.code(201).send({ token: app.jwt.sign({ sub: id }), userId: id });
+    const { email, displayName, identity, publicKey } = parsed.data;
+
+    if (await ctx.store.userByEmail(email)) {
+      return reply.code(409).send({ error: 'already_registered' });
+    }
+    // The identity blob and public key are stored verbatim. We cannot use
+    // either: the blob only opens with a passphrase we never receive.
+    const user = await ctx.store.createUser({ email, displayName, identity, publicKey });
+    await ctx.store.appendAudit(user.id, 'ACCOUNT_CREATED', 'Account created.');
+    return reply.code(201).send({ token: app.jwt.sign({ sub: user.id }), userId: user.id });
+  });
+
+  /**
+   * The encrypted identity blob, so a new phone can restore.
+   *
+   * Signing in is NOT unlocking: this hands back a blob that only the user's
+   * passphrase opens. A stolen session token gets someone the ciphertext and
+   * nothing else.
+   */
+  app.get('/v1/me', { preHandler: auth }, async (req, reply) => {
+    const user = await ctx.store.userById(userId(req));
+    if (!user) return reply.code(404).send({ error: 'not_found' });
+    return {
+      id: user.id, email: user.email, displayName: user.displayName,
+      identity: user.identity, publicKey: user.publicKey,
+    };
   });
 
   /* -------------------------------- triggers ----------------------------- */
@@ -69,21 +90,21 @@ export async function registerRoutes(app: FastifyInstance, ctx: Ctx) {
     }
 
     const now = ctx.now();
-    const id = `trigger-${Math.random().toString(36).slice(2, 10)}`;
-    ctx.repo.triggers.set(id, {
-      id, userId: userId(req), name: parsed.data.name, workflow,
+    const created = await ctx.store.createTrigger({
+      userId: userId(req), name: parsed.data.name, workflow,
       state: freshState(now),
       nextEvaluationAt: plan(workflow, now).dueAt,
     });
-    await ctx.repo.appendAudit(
+    await ctx.store.appendAudit(
       userId(req), 'TRIGGER_ARMED', `${parsed.data.name} armed. ${summariseWorkflow(workflow)}`,
     );
-    return reply.code(201).send({ id, warnings: issues.filter((i) => i.severity === 'warning') });
+    return reply.code(201).send({
+      id: created.id, warnings: issues.filter((i) => i.severity === 'warning'),
+    });
   });
 
   app.get('/v1/triggers', { preHandler: auth }, async (req) =>
-    [...ctx.repo.triggers.values()]
-      .filter((t) => t.userId === userId(req))
+    (await ctx.store.triggersFor(userId(req)))
       .map((t) => {
         const p = plan(t.workflow, t.state.lastCheckInAt);
         const d = evaluate(t.workflow, t.state, ctx.now());
@@ -122,82 +143,84 @@ export async function registerRoutes(app: FastifyInstance, ctx: Ctx) {
   app.post('/v1/check-in', { preHandler: auth }, async (req, reply) => {
     const parsed = CheckInRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply);
-    const t = ctx.repo.triggers.get(parsed.data.triggerId);
+    const t = await ctx.store.trigger(parsed.data.triggerId);
     if (!t || t.userId !== userId(req)) return reply.code(404).send({ error: 'not_found' });
 
     const now = ctx.now();
-    t.state = applyCheckIn(t.state, now);
-    t.nextEvaluationAt = plan(t.workflow, now).dueAt;
-    await ctx.repo.appendAudit(t.userId, 'CHECK_IN', `${t.name}: checked in via ${parsed.data.source}.`);
-    return { status: t.state.status, nextCheckInDueAt: new Date(t.nextEvaluationAt).toISOString() };
+    const dueAt = plan(t.workflow, now).dueAt;
+    await ctx.store.updateTriggerState(t.id, applyCheckIn(t.state, now), dueAt);
+    await ctx.store.appendAudit(t.userId, 'CHECK_IN', `${t.name}: checked in via ${parsed.data.source}.`);
+    return { status: 'ACTIVE', nextCheckInDueAt: new Date(dueAt).toISOString() };
   });
 
   app.post('/v1/triggers/pause', { preHandler: auth }, async (req, reply) => {
     const parsed = PauseTriggerRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply);
-    const t = ctx.repo.triggers.get(parsed.data.triggerId);
+    const t = await ctx.store.trigger(parsed.data.triggerId);
     if (!t || t.userId !== userId(req)) return reply.code(404).send({ error: 'not_found' });
     const until = parsed.data.untilIso ? Date.parse(parsed.data.untilIso) : null;
-    t.state = applyPause(t.state, ctx.now(), until);
-    t.nextEvaluationAt = until;
-    await ctx.repo.appendAudit(t.userId, 'TRIGGER_PAUSED', `${t.name}: paused. Nothing is counting down.`);
-    return { status: t.state.status };
+    await ctx.store.updateTriggerState(t.id, applyPause(t.state, ctx.now(), until), until);
+    await ctx.store.appendAudit(t.userId, 'TRIGGER_PAUSED', `${t.name}: paused. Nothing is counting down.`);
+    return { status: 'PAUSED' };
   });
 
   app.post('/v1/triggers/resume', { preHandler: auth }, async (req, reply) => {
     const parsed = z.object({ triggerId: z.string() }).safeParse(req.body);
     if (!parsed.success) return bad(reply);
-    const t = ctx.repo.triggers.get(parsed.data.triggerId);
+    const t = await ctx.store.trigger(parsed.data.triggerId);
     if (!t || t.userId !== userId(req)) return reply.code(404).send({ error: 'not_found' });
     const now = ctx.now();
-    t.state = applyResume(t.state, now);
-    t.nextEvaluationAt = plan(t.workflow, now).dueAt;
-    return { status: t.state.status };
+    await ctx.store.updateTriggerState(t.id, applyResume(t.state, now), plan(t.workflow, now).dueAt);
+    return { status: 'ACTIVE' };
   });
 
   app.delete('/v1/triggers/:id', { preHandler: auth }, async (req: any, reply) => {
-    const t = ctx.repo.triggers.get(req.params.id);
+    const t = await ctx.store.trigger(req.params.id);
     if (!t || t.userId !== userId(req)) return reply.code(404).send({ error: 'not_found' });
-    t.state = applyCancel(t.state, ctx.now());
-    t.nextEvaluationAt = null;
-    await ctx.repo.appendAudit(t.userId, 'TRIGGER_CANCELLED', `${t.name}: cancelled. It will never fire.`);
-    return { status: t.state.status };
+    await ctx.store.updateTriggerState(t.id, applyCancel(t.state, ctx.now()), null);
+    await ctx.store.appendAudit(t.userId, 'TRIGGER_CANCELLED', `${t.name}: cancelled. It will never fire.`);
+    return { status: 'CANCELLED' };
   });
 
   /* --------------------------- vaults & recipients ----------------------- */
 
-  const vaults = new Map<string, any>();
-  const items = new Map<string, any[]>();
-
   app.post('/v1/vaults', { preHandler: auth }, async (req, reply) => {
     const parsed = CreateVaultRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply, parsed.error.issues);
-    const id = `vault-${Math.random().toString(36).slice(2, 10)}`;
-    vaults.set(id, { id, userId: userId(req), ...parsed.data });
-    items.set(id, []);
-    return reply.code(201).send({ id });
+    const v = await ctx.store.createVault({
+      userId: userId(req),
+      encryptedTitle: parsed.data.encryptedTitle,
+      wrappedVaultKey: parsed.data.wrappedVaultKey,
+      ...(parsed.data.cosmetic
+        ? { accent: parsed.data.cosmetic.accent, glyph: parsed.data.cosmetic.glyph }
+        : {}),
+    });
+    return reply.code(201).send({ id: v.id });
   });
 
   app.post('/v1/vaults/:id/items', { preHandler: auth }, async (req: any, reply) => {
-    const vault = vaults.get(req.params.id);
+    const vault = await ctx.store.vault(req.params.id);
     if (!vault || vault.userId !== userId(req)) return reply.code(404).send({ error: 'not_found' });
     const parsed = CreateVaultItemRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply, parsed.error.issues);
-    const id = `item-${Math.random().toString(36).slice(2, 10)}`;
-    items.get(vault.id)!.push({ id, ...parsed.data });
-    return reply.code(201).send({ id });
+    const item = await ctx.store.createVaultItem({
+      vaultId: vault.id, kind: parsed.data.kind,
+      encryptedLabel: parsed.data.encryptedLabel, ciphertext: parsed.data.ciphertext,
+      sizeBytes: parsed.data.sizeBytes ?? 0,
+    });
+    return reply.code(201).send({ id: item.id });
   });
 
   app.post('/v1/recipients', { preHandler: auth }, async (req, reply) => {
     const parsed = CreateRecipientRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply, parsed.error.issues);
-    const id = `rcpt-${Math.random().toString(36).slice(2, 10)}`;
-    ctx.repo.recipients.set(id, {
-      id, userId: userId(req), displayName: parsed.data.displayName,
-      email: parsed.data.email, phone: parsed.data.phone, isVerifier: false,
-    });
-    return reply.code(201).send({ id });
+    const r = await ctx.store.createRecipient({ userId: userId(req), ...parsed.data });
+    return reply.code(201).send({ id: r.id });
   });
+
+  app.get('/v1/recipients', { preHandler: auth }, async (req) =>
+    ctx.store.recipientsFor(userId(req)),
+  );
 
   /**
    * Grants arrive already sealed by the device. We check shape and custody,
@@ -206,7 +229,12 @@ export async function registerRoutes(app: FastifyInstance, ctx: Ctx) {
   app.post('/v1/grants', { preHandler: auth }, async (req, reply) => {
     const parsed = CreateGrantRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply, parsed.error.issues);
-    const { vaultId, recipientId, triggerId, grant } = parsed.data;
+    const { vaultId, recipientId, triggerId, grant, encryptedNote } = parsed.data;
+
+    const vault = await ctx.store.vault(vaultId);
+    if (!vault || vault.userId !== userId(req)) return reply.code(404).send({ error: 'not_found' });
+    const trigger = await ctx.store.trigger(triggerId);
+    if (!trigger || trigger.userId !== userId(req)) return reply.code(404).send({ error: 'not_found' });
 
     if (grant.mode === 'SPLIT_CUSTODY') {
       const serviceShares = grant.shares.filter((s) => s.kind === 'SERVICE').length;
@@ -220,10 +248,12 @@ export async function registerRoutes(app: FastifyInstance, ctx: Ctx) {
       }
     }
 
-    const id = `grant-${Math.random().toString(36).slice(2, 10)}`;
-    ctx.repo.grants.push({ id, triggerId, vaultId, recipientId, mode: grant.mode });
-    await ctx.repo.appendAudit(userId(req), 'GRANT_CREATED', 'A vault was attached to a recipient.');
-    return reply.code(201).send({ id });
+    const created = await ctx.store.createGrant({
+      vaultId, recipientId, triggerId, mode: grant.mode, payload: grant,
+      ...(encryptedNote ? { encryptedNote } : {}),
+    });
+    await ctx.store.appendAudit(userId(req), 'GRANT_CREATED', 'A vault was attached to a recipient.');
+    return reply.code(201).send({ id: created.id });
   });
 
   /* --------------------------- the wellbeing check ----------------------- */
@@ -241,9 +271,6 @@ export async function registerRoutes(app: FastifyInstance, ctx: Ctx) {
     const parsed = WellbeingAnswerRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply);
 
-    const hash = ctx.tokens.hash(parsed.data.token);
-    const record = ctx.repo.answerTokens.find((t) => t.tokenHash === hash);
-
     const thanks = {
       recorded: true,
       message:
@@ -251,21 +278,21 @@ export async function registerRoutes(app: FastifyInstance, ctx: Ctx) {
           ? 'Thank you. Everything has been stopped.'
           : 'Thank you. Nothing happens immediately; there is still a waiting period.',
     };
-    // Same body either way: a bad token must be indistinguishable from a good one.
-    if (!record) return reply.code(202).send(thanks);
 
-    const trigger = ctx.repo.triggers.get(record.triggerId);
+    // Single-use, and claimed atomically. The same body comes back either way:
+    // someone guessing a token must not learn whether it was real.
+    const claim = await ctx.store.useAnswerToken(ctx.tokens.hash(parsed.data.token));
+    if (!claim) return reply.code(202).send(thanks);
+
+    const now = ctx.now();
+    await ctx.store.recordAttestation({ ...claim, verdict: parsed.data.verdict, at: now, otpVerified: true });
+    // Evaluate immediately rather than at the next scheduled tick: an "alive"
+    // answer should stop the cascade now, not in six hours.
+    await ctx.store.wakeTrigger(claim.triggerId, now);
+
+    const trigger = await ctx.store.trigger(claim.triggerId);
     if (trigger) {
-      trigger.state = recordAttestation(trigger.state, {
-        contactId: record.contactId,
-        verdict: parsed.data.verdict,
-        at: ctx.now(),
-        otpVerified: true,
-      });
-      // Re-evaluate immediately: an ALIVE answer should stop the cascade now,
-      // not at the next scheduled tick.
-      trigger.nextEvaluationAt = ctx.now();
-      await ctx.repo.appendAudit(
+      await ctx.store.appendAudit(
         trigger.userId, 'WELLBEING_ANSWER',
         `${trigger.name}: someone you named answered "${parsed.data.verdict.toLowerCase()}".`,
       );
@@ -275,57 +302,35 @@ export async function registerRoutes(app: FastifyInstance, ctx: Ctx) {
 
   /* ------------------------------- redeeming ----------------------------- */
 
-  /** Step 1: the recipient asks for a code at the address the owner recorded. */
+  /**
+   * Step 1: the recipient asks for a code at the address the owner recorded.
+   * Uniform response — a guessed delivery id must not confirm itself.
+   */
   app.post('/v1/claim/start', async (req, reply) => {
     const parsed = ClaimStartRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply);
-    const delivery = ctx.repo.deliveries.find((d) => d.id === parsed.data.deliveryId);
-    const ok = delivery && delivery.claimTokenHash === ctx.tokens.hash(parsed.data.token);
-    // Uniform response: a guessed delivery id must not confirm itself.
     return reply.code(202).send({
       sent: true,
       message: 'If this link is valid, we have sent a code to the address it was addressed to.',
-      _matched: ok ? true : undefined,
     });
   });
 
   /**
    * Step 2: they prove control of the address and hand us the public half of a
-   * keypair their browser just made.
-   *
-   * What comes back is the sealed grant plus every custody share released to
-   * this session — each sealed to `claimPublicKey`, whose private half never
-   * leaves their device. The owner's question comes back too; the ANSWER never
-   * reaches us in any form, because it is key material, not a password we check.
+   * keypair their browser just made. What comes back is the sealed grant plus
+   * every custody share released to this session — each sealed to that public
+   * key, whose private half never leaves their device.
    */
   app.post('/v1/claim/verify', async (req, reply) => {
     const parsed = ClaimVerifyRequest.safeParse(req.body);
     if (!parsed.success) return bad(reply);
-
-    const delivery = ctx.repo.deliveries.find((d) => d.id === parsed.data.deliveryId);
-    if (!delivery || delivery.claimTokenHash !== ctx.tokens.hash(parsed.data.token)) {
-      return reply.code(404).send({ error: 'not_found' });
-    }
-
-    const grant = ctx.repo.grants.find((g) => g.id === delivery.grantId);
-    const trigger = grant ? ctx.repo.triggers.get(grant.triggerId) : undefined;
-    const owner = trigger ? await ctx.repo.owner(trigger.userId) : null;
-
-    return {
-      deliveryId: delivery.id,
-      ownerName: owner?.displayName ?? 'someone',
-      // The service seals its own share to the claim session here. It is one
-      // share of a threshold it is short of, so relaying is all it can do.
-      relayedShares: ctx.repo.relayedShares
-        .filter((r) => r.deliveryId === delivery.id)
-        .map(({ custodianId, sealed }) => ({ custodianId, sealed })),
-      awaiting: ctx.repo.awaitingCustodians(delivery.id),
-    };
+    return reply.code(501).send({
+      error: 'not_implemented',
+      message: 'The redeem flow is built in @vigil/crypto and not yet wired to storage.',
+    });
   });
 
   /* -------------------------------- audit log ----------------------------- */
 
-  app.get('/v1/audit', { preHandler: auth }, async (req) =>
-    ctx.repo.audit.filter((a) => a.userId === userId(req)),
-  );
+  app.get('/v1/audit', { preHandler: auth }, async (req) => ctx.store.auditFor(userId(req)));
 }

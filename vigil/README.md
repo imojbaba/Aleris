@@ -13,7 +13,8 @@ and only after a long, loud, many-channelled attempt to reach you, and after
 someone who knows you has had the chance to say "they're fine" — what you left
 is delivered to the people you left it for.
 
-**Status:** working MVP. 190 tests, five packages, all typechecked.
+**Status:** working MVP. 224 tests, five packages, all typechecked.
+Backend runs on real Postgres; the app has a tested client for it.
 `vigil` is a working codename, not a branding decision.
 
 ---
@@ -24,14 +25,14 @@ is delivered to the people you left it for.
 vigil/
 ├── packages/crypto    Key hierarchy, split custody, the redeem protocol  (80 tests)
 ├── packages/core      Workflow model, validator and evaluator               (52 tests)
-├── packages/shared    Wire contract — enforces "no plaintext, ever"       (25 tests)
-├── apps/api           Fastify service, worker, release engine, messaging  (33 tests)
+├── packages/shared    Wire contract + the typed API client                (25 tests)
+├── apps/api           Service, worker, engine, messaging, Postgres        (67 tests)
 └── apps/mobile        Expo app for iOS and Android
 ```
 
 ```bash
 pnpm install
-pnpm test          # 190 tests
+pnpm test          # 224 tests
 pnpm typecheck
 pnpm api:dev       # runs in memory; no database needed
 pnpm mobile:start  # Expo — iOS, Android
