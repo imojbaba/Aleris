@@ -133,7 +133,19 @@ export class ReleaseEngine {
       // Recorded as an ATTEMPT, not a delivery: a permanently bouncing address
       // must not hold someone's legacy hostage forever.
       await this.deps.repo.recordAttempt(trigger.id, action.stepId, action.occurrence, channel, now);
-      if (result.ok) sent += 1;
+      if (result.ok) {
+        sent += 1;
+      } else if (result.permanent) {
+        // A channel that can never work is something the owner must be told
+        // about while they are still here to fix it. It is also the one failure
+        // that should make us LESS confident they are gone, not more.
+        await this.deps.repo.appendAudit(
+          trigger.userId,
+          'CHANNEL_UNREACHABLE',
+          `${trigger.name}: we could not reach you on ${channel.toLowerCase()} at all. Check the details we have for you.`,
+          { channel, step: action.stepId, detail: result.detail },
+        );
+      }
     }
     return sent;
   }

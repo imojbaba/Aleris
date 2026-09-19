@@ -4,7 +4,8 @@ import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import { env } from './env.js';
 import { registerRoutes } from './routes/index.js';
-import { MemoryRepo, RecordingNotifier, MemoryLocks, nodeTokens } from './adapters/memory.js';
+import { MemoryRepo, MemoryLocks, nodeTokens } from './adapters/memory.js';
+import { buildNotifier } from './adapters/notifiers/index.js';
 import { ReleaseEngine } from './domain/releaseEngine.js';
 import { systemClock } from './domain/ports.js';
 
@@ -20,16 +21,21 @@ export async function buildServer() {
   const repo = new MemoryRepo();
   await registerRoutes(app, { repo, tokens: nodeTokens, now: () => Date.now() });
 
+  const { notifier, live, dryRun } = buildNotifier(env.notifiers, (l) => app.log.info(l));
+  app.log.info(
+    `channels live: ${live.length ? live.join(', ') : 'none'} | dry-run (logged, NOT sent): ${dryRun.join(', ')}`,
+  );
+
   const engine = new ReleaseEngine({
     repo,
-    notifier: new RecordingNotifier(),
+    notifier,
     clock: systemClock,
     locks: new MemoryLocks(),
     tokens: nodeTokens,
     appBaseUrl: env.appBaseUrl,
   });
 
-  return { app, engine, repo };
+  return { app, engine, repo, channels: { live, dryRun } };
 }
 
 const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop() ?? '');

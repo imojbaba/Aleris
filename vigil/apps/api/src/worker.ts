@@ -20,6 +20,17 @@ setInterval(async () => {
     if (report.evaluated > 0 || report.errors.length > 0) {
       console.log(JSON.stringify({ at: new Date().toISOString(), ...report }));
     }
+    /**
+     * Heartbeat AFTER a completed tick, never before.
+     *
+     * A worker that dies quietly is a product that quietly stops keeping its
+     * promise, and nobody outside would ever notice — the failure looks exactly
+     * like everyone being fine. Pinging on entry would report health for a
+     * process that then crashed; pinging on exit reports work actually done.
+     */
+    if (env.heartbeatUrl) {
+      await fetch(env.heartbeatUrl, { method: 'POST' }).catch(() => {});
+    }
   } catch (error) {
     console.error(JSON.stringify({ at: new Date().toISOString(), fatal: (error as Error).message }));
   } finally {

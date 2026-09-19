@@ -78,8 +78,23 @@ export interface OutboundMessage {
   variables: Record<string, string>;
 }
 
+export interface SendResult {
+  ok: boolean;
+  detail?: string;
+  /**
+   * True when retrying is pointless — a dead mailbox, a blocked number, a
+   * rejected template.
+   *
+   * The state machine needs this. A hard bounce is evidence the owner is
+   * UNREACHABLE, which is not evidence they are GONE, and the two must not be
+   * collapsed: a silently swallowed bounce is a path to someone's letters
+   * going out while they are alive and well.
+   */
+  permanent?: boolean;
+}
+
 export interface Notifier {
-  send(message: OutboundMessage): Promise<{ ok: boolean; detail?: string }>;
+  send(message: OutboundMessage): Promise<SendResult>;
 }
 
 /**
